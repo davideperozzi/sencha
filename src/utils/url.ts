@@ -18,7 +18,7 @@ export function trimUrl(
   leading = false,
   trailing = false
 ) {
-  return url
-    .replace(/\/$/, trailing ? '/' : '')
-    .replace(/^\//, leading ? '/' : '');
+  return (leading ? '/' : '')
+    + url.replace(/\/$/, '').replace(/^\//, '')
+    + (trailing ? '/' : '');
 }

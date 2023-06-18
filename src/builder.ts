@@ -24,17 +24,26 @@ export class Builder {
   }
 
   async build(routes: Route[] = []) {
+    const renderedRoutes: string[] = [];
+
     try {
       await batchPromise(
         routes,
         this.config.parallel,
         async (route) => this.compile(route).then(
-          async (html) => this.render(route, html)
+          async (html) => {
+            await this.render(route, html);
+            renderedRoutes.push(route.slug);
+          }
         )
       );
     } catch(err) {
       this.logger.error(err);
     }
+
+    this.logger.debug(
+      `rendered ${routes.length}/${renderedRoutes.length} routes`
+    );
   }
 
   async tidy(routes: Route[] = []) {
@@ -57,8 +66,6 @@ export class Builder {
 
     await fs.mkdir(outDir, { recursive: true });
     await Bun.write(outFile, html);
-
-    this.logger.debug(`rendered ${route.slug}`);
   }
 
   async compile(route: Route): Promise<string> {

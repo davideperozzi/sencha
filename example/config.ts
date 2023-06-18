@@ -1,22 +1,37 @@
-import type { Sencha, SenchaConfig, SenchaOptions } from '../src';
+import type { Sencha, SenchaOptions } from '../src';
 
-export default async (sencha: Sencha): Promise<SenchaOptions> => ({
-  locale: ['en', 'fr', 'es'],
+/** API options */
+export const config: SenchaOptions = {
+  health: [ 'https://cat-fact.herokuapp.com/' ],
   fetch: {
-    healthCheck: false,
     endpoints: {
       cat: 'https://cat-fact.herokuapp.com/'
     }
-  },
-  route: {
-    params: {
-      'projects/[project]': [
-        { project: 'project-1' },
-        { project: 'project-2' },
-        { project: 'project-3' },
-      ]
-    }
   }
+};
+
+/** General options */
+export default async (sencha: Sencha): Promise<SenchaOptions> => {
+  // await sencha.health();
+  // await sencha.fetch('cat:facts', { store: 'cat.facts', default: [] });
+  sencha.store.set('cat.facts', []);
+
+  return {
+    locale: ['en', 'fr', 'es'],
+    route: {
+      params: {
+        'projects/[project]': [
+          { project: 'project-1' },
+          { project: 'project-2' },
+          { project: 'project-3' },
+          { project: 'project-4' },
+          { project: 'project-5' },
+          { project: 'project-6' },
+          { project: 'project-7' },
+          { project: 'project-8' },
+        ]
+      }
+    }
   // route: '/:locale/:slug',
   // template: {
   //   engine: 'eta',
@@ -46,4 +61,5 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => ({
   //     richText: (data: any[]) => data.join(','),
   //   }
   // }
-});
+  }
+};

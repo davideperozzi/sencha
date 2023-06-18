@@ -14,3 +14,7 @@ export async function batchPromise<T>(
 
   return results;
 }
+
+export async function delay(duration = 0) {
+  await new Promise((resolve) => setTimeout(resolve, duration));
+}

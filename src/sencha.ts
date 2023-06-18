@@ -5,12 +5,10 @@ import deepmerge from '@fastify/deepmerge';
 import builders from './builders';
 import { SenchaConfig, SenchaOptions } from './config';
 import { defaultConfig as fetcherDefaultConfig, Fetcher } from './fetcher';
+import { healthCheck } from './health';
 import logger from './logger';
-import {
-  filterRoutes, findRouteParams, parseRouteParam, parseSlug, Route, RouteFilter,
-} from './route';
-import { scanDir } from './utils/files';
-import { cleanUrl } from './utils/url';
+import { createRoutesFromFiles, filterRoutes, RouteFilter } from './route';
+import store from './store';
 
 const defaultConfig: SenchaConfig = {
   hooks: {},
@@ -37,12 +35,40 @@ export class Sencha {
   private fetcher = new Fetcher();
   private merge = deepmerge();
 
+  fetch = this.fetcher.fetch.bind(this.fetcher);
+
   get templateDir() {
     return path.join(this.config.rootDir, this.config.template.root);
   }
 
   get outDir() {
     return path.join(this.config.rootDir, this.config.outDir);
+  }
+
+  get store() {
+    return store;
+  }
+
+  clear() {
+    this.fetcher.clear();
+  }
+
+  async health(exit = true) {
+    if (this.config.health) {
+      const success = await healthCheck(this.config.health);
+
+      if ( ! success) {
+        this.logger.fatal(`health check failed`);
+
+        if (exit) {
+          process.exit(1);
+        }
+
+        return false;
+      }
+    }
+
+    return true;
   }
 
   async configure(options: SenchaOptions) {
@@ -60,10 +86,9 @@ export class Sencha {
     const builder = this.createBuilder();
     const routes = await this.createRoutes();
 
-    this.fetcher.clear();
-
     (global as any).sencha = {
-      fetch: this.fetcher.fetch.bind(this.fetcher)
+      store: store,
+      fetch: this.fetch,
     };
 
     await builder.build(filterRoutes(await this.createRoutes(), filter));
@@ -91,39 +116,8 @@ export class Sencha {
     const { rootDir, route, template, locale: allLocales } = this.config;
     const templateDir = path.join(rootDir, template.root);
     const viewsDir = path.join(templateDir, template.views);
-    const viewFiles = await scanDir(viewsDir, true);
     const locales = Array.isArray(allLocales) ? allLocales : [allLocales];
-    const routes: Route[] = [];
 
-    for (const locale of locales) {
-      for (const file of viewFiles) {
-        const relFile = path.relative(viewsDir, file);
-        const viewFile = cleanUrl(relFile, false, false, true);
-        const params = findRouteParams(viewFile, route.params);
-        const slug = parseSlug(viewFile, route.pattern, {
-          locale: locale === locales[0] ? '' : locale
-        });
-
-        if (params && params.length > 0) {
-          for (const param of params) {
-            routes.push({
-              file,
-              param,
-              slug: parseRouteParam(slug, param),
-              lang: locale,
-            });
-          }
-        } else {
-          routes.push({
-            file,
-            slug,
-            param: {},
-            lang: locale,
-          });
-        }
-      }
-    }
-
-    return routes;
+    return await createRoutesFromFiles(viewsDir, route, locales);
   }
 }

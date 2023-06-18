@@ -1,0 +1,51 @@
+[
+  {
+    "file": "/root/projects/undesigned-infra/sencha/tests/route/about.html",
+    "slug": "/about",
+    "param": {},
+    "lang": "en"
+  }, {
+    "file": "/root/projects/undesigned-infra/sencha/tests/route/blog/articles/[article].html",
+    "param": {
+      "article": "article-1"
+    },
+    "slug": "/blog/articles/article-1",
+    "lang": "en"
+  }, {
+    "file": "/root/projects/undesigned-infra/sencha/tests/route/index.html",
+    "slug": "/",
+    "param": {},
+    "lang": "en"
+  }, {
+    "file": "/root/projects/undesigned-infra/sencha/tests/route/projects/[project].html",
+    "param": {
+      "project": "project-1"
+    },
+    "slug": "/projects/project-1",
+    "lang": "en"
+  }, {
+    "file": "/root/projects/undesigned-infra/sencha/tests/route/about.html",
+    "slug": "/de/about",
+    "param": {},
+    "lang": "de"
+  }, {
+    "file": "/root/projects/undesigned-infra/sencha/tests/route/blog/articles/[article].html",
+    "param": {
+      "article": "article-1"
+    },
+    "slug": "/de/blog/articles/article-1",
+    "lang": "de"
+  }, {
+    "file": "/root/projects/undesigned-infra/sencha/tests/route/index.html",
+    "slug": "/de",
+    "param": {},
+    "lang": "de"
+  }, {
+    "file": "/root/projects/undesigned-infra/sencha/tests/route/projects/[project].html",
+    "param": {
+      "project": "project-1"
+    },
+    "slug": "/de/projects/project-1",
+    "lang": "de"
+  }
+]

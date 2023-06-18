@@ -1,6 +1,6 @@
 <% layout('/layouts/default') %>
 
-<% for (fact of await sencha.fetch('cat:facts')) { %>
+<% for (fact of sencha.store.get('cat.facts')) { %>
   <h2><%~ fact.createdAt %></h2>
   <p><%~ fact.text %></p>
 <% } %>

@@ -1,5 +1,6 @@
 import builders from './builders';
 import { FetchConfig } from './fetcher';
+import { HealthCheck } from './health';
 import { DeepPartial } from './types';
 
 export interface TemplateConfig {
@@ -25,6 +26,7 @@ export interface RouteConfig {
 export type SenchaOptions = DeepPartial<SenchaConfig>;
 export interface SenchaConfig {
   route: RouteConfig;
+  health?: (HealthCheck | string)[];
   locale: string[] | string;
   fetch: FetchConfig;
   rootDir: string;

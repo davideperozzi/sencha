@@ -1,4 +1,7 @@
-import { RouteParams } from './';
+import path from 'node:path';
+
+import { RouteConfig, RouteParams } from './';
+import { scanDir } from './utils/files';
 import { cleanUrl } from './utils/url';
 
 export type RouteFilter = string[] | string | RegExp | RegExp[];
@@ -46,10 +49,10 @@ export function parseRouteParam(slug: string, param: Record<string, string>) {
     slug = slug.replaceAll(`[${key}]`, param[key]);
   }
 
-  return slug;
+  return cleanUrl(slug);
 }
 
-export function filterRoutes(routes: Route[], filter: RouteFilter) {
+export function filterRoutes(routes: Route[], filter: RouteFilter = /.*/) {
   const filters: (string | RegExp)[] = [];
 
   if (typeof filter === 'string' || filter instanceof RegExp) {
@@ -58,13 +61,15 @@ export function filterRoutes(routes: Route[], filter: RouteFilter) {
 
   return routes.filter(route => {
     for (const slugFilter of filters) {
+      const routeSlug = cleanUrl(route.slug);
+
       if (
         (
           slugFilter instanceof RegExp &&
-          slugFilter.test(route.slug)
+          slugFilter.test(routeSlug)
         ) || (
           typeof slugFilter === 'string' &&
-          slugFilter === route.slug
+          cleanUrl(slugFilter) === routeSlug
         )
       ) {
         return true;
@@ -73,4 +78,45 @@ export function filterRoutes(routes: Route[], filter: RouteFilter) {
 
     return false;
   });
+}
+
+
+export async function createRoutesFromFiles(
+  folder: string,
+  config: RouteConfig,
+  locales: string[] = []
+) {
+  const routes: Route[] = [];
+  const viewFiles = await scanDir(folder, true);
+
+  for (const locale of locales) {
+    for (const file of viewFiles) {
+      const relFile = path.relative(folder, file);
+      const viewFile = cleanUrl(relFile, false, false, true);
+      const params = findRouteParams(viewFile, config.params);
+      const slug = parseSlug(viewFile, config.pattern, {
+        locale: locale === locales[0] ? '' : locale
+      });
+
+      if (params && params.length > 0) {
+        for (const param of params) {
+          routes.push({
+            file,
+            param,
+            slug: parseRouteParam(slug, param),
+            lang: locale,
+          });
+        }
+      } else {
+        routes.push({
+          file,
+          slug,
+          param: {},
+          lang: locale,
+        });
+      }
+    }
+  }
+
+  return routes;
 }
