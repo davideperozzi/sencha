@@ -1,11 +1,16 @@
-import type { Sencha, SenchaOptions } from '../src';
+import type { Route, Sencha, SenchaOptions, FetcherInit } from '../src';
 
 /** API options */
 export const config: SenchaOptions = {
   health: [ 'https://cat-fact.herokuapp.com/' ],
   fetch: {
     endpoints: {
-      cat: 'https://cat-fact.herokuapp.com/'
+      cat: {
+        url: 'https://cat-fact.herokuapp.com/',
+        afterFetch: (result: any) => {
+          return { test: '1' };
+        }
+      }
     }
   }
 };
@@ -13,8 +18,7 @@ export const config: SenchaOptions = {
 /** General options */
 export default async (sencha: Sencha): Promise<SenchaOptions> => {
   // await sencha.health();
-  // await sencha.fetch('cat:facts', { store: 'cat.facts', default: [] });
-  sencha.store.set('cat.facts', []);
+  await sencha.fetch('cat:facts', { store: 'cat.facts', default: [] });
 
   return {
     locale: ['en', 'fr', 'es'],
@@ -30,6 +34,13 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
           { project: 'project-7' },
           { project: 'project-8' },
         ]
+      },
+      data: {
+        '__': { 'title': 'Hello!' },
+        'projects/[project]': async (route: Route) => ({
+          active: 1,
+          name: route.param.project
+        })
       }
     }
   // route: '/:locale/:slug',

@@ -3,8 +3,8 @@ import path from 'node:path';
 
 import { RouteConfig } from '../src';
 import {
-  createRoutesFromFiles, filterRoutes, findRouteParams, parseRouteParam,
-  parseSlug, Route,
+  createRoutesFromFiles, filterRoutes, findRouteParams, parseRouteData,
+  parseRouteParam, parseSlug, RouteParams, Route,
 } from '../src/route';
 
 test('route', () => {
@@ -27,7 +27,7 @@ test('route', () => {
   describe('findRouteParams', () => {
     const projects: Record<string, string>[] = [ { project: 'project-1' } ];
     const articles: Record<string, string>[] = [];
-    const params = {
+    const params: RouteParams = {
       'projects/[project]': projects,
       'articles/[article]': articles,
     };
@@ -37,22 +37,17 @@ test('route', () => {
     expect(findRouteParams('notfound/[nothing]', params)).toBeEmpty();
   });
 
-  describe('filterRoutes', () => {
-    const routes: Route[] = [
-      { slug: '/', param: {}, lang: 'en', file: 'home' },
-      { slug: '/about', param: {}, lang: 'en', file: 'about' },
-      { slug: '/articles/article-1', param: {}, lang: 'en', file: 'article' },
-      { slug: '/projects/project-1', param: {}, lang: 'en', file: 'project' },
-      { slug: '/projects/project-2', param: {}, lang: 'en', file: 'project' },
-    ];
+  describe('filterRoutes', async () => {
+    const routes = (await import('./data/sample.json')).default as Route[];
 
     expect(filterRoutes(routes)).toMatchObject(routes);
-    expect(filterRoutes(routes, '/')).toMatchObject([ routes[0] ]);
-    expect(filterRoutes(routes, '/about/')).toMatchObject([ routes[1] ]);
+
+    expect(filterRoutes(routes, '/')).toMatchObject([ routes[2] ]);
+    expect(filterRoutes(routes, '/about/')).toMatchObject([ routes[0] ]);
     expect(filterRoutes(routes, /projects\/.*/))
-      .toMatchObject([ routes[3], routes[4] ]);
-    expect(filterRoutes(routes, 'projects/project-1'))
-      .toMatchObject([ routes[3] ]);
+      .toMatchObject([ routes[3], routes[7] ]);
+    expect(filterRoutes(routes, '/de/projects/project-1'))
+      .toMatchObject([ routes[7] ]);
   });
 
   describe('createRoutesFromFiles', async () => {
@@ -72,5 +67,49 @@ test('route', () => {
     expect(async () => {
       await createRoutesFromFiles('nonexistentdir', config, ['en', 'de']);
     }).toThrow();
+  });
+
+  describe('parseRouteData', async () => {
+    const dataRoutes = (await import('./data/routes.json')).default as Route[];
+
+    await parseRouteData(dataRoutes, {});
+    expect(dataRoutes.map(route => route.data))
+      .toMatchObject(dataRoutes.map(_ => ({})));
+
+    await parseRouteData(dataRoutes, { 'about': { title: 'About' } });
+    expect(dataRoutes.find(route => route.view === 'about')?.data)
+      .toMatchObject({ title: 'About' });
+
+    await parseRouteData(dataRoutes, {
+      'about': (route: Route) => ({
+        title: route.lang === 'de' ? 'Über' : 'About'
+      })
+    });
+
+    const aboutRoutes = dataRoutes.filter(route => route.view === 'about');
+    const deRoute = aboutRoutes.find(route => route.lang === 'de');
+    const enRoute = aboutRoutes.find(route => route.lang === 'en');
+
+    expect(deRoute?.data).toMatchObject({ title: 'Über' });
+    expect(enRoute?.data).toMatchObject({ title: 'About' });
+
+    await parseRouteData(dataRoutes, {
+      'projects/[project]': async (route: Route) => ({
+        title: route.param.project
+      })
+    });
+
+    const projectRoutes = dataRoutes.filter(
+      route => route.view === 'projects/[project]'
+    );
+
+    expect(projectRoutes[0])
+      .toMatchObject({ lang: 'en', data: { title: 'project-1' } });
+    expect(projectRoutes[1])
+      .toMatchObject({ lang: 'de', data: { title: 'project-1' } });
+
+    await parseRouteData(dataRoutes, { '__': { global: 'test' } });
+    expect(dataRoutes.map(route => route.data))
+      .toMatchObject(dataRoutes.map(_ => ({ global: 'test' })));
   });
 });

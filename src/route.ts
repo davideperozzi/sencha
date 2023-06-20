@@ -1,16 +1,32 @@
 import path from 'node:path';
 
-import { RouteConfig, RouteParams } from './';
+import { RouteConfig } from './';
 import { scanDir } from './utils/files';
+import { optPromise } from './utils/promise';
 import { cleanUrl } from './utils/url';
+import { default as defaultLogger } from './logger';
 
+export type RouteDataEntry = Promise<Record<string, any>> | Record<string, any>;
+export type RouteData = Record<
+  string,
+  ((route: Route) => RouteDataEntry) | RouteDataEntry
+>;
+export type RouteParamsEntry = Record<string, string>[];
+export type RouteParams = Record<
+  string,
+  ((route: Route) => RouteParamsEntry) | RouteParamsEntry
+>;
 export type RouteFilter = string[] | string | RegExp | RegExp[];
 export interface Route {
   file: string;
   slug: string;
+  view: string;
   param: Record<string, any>;
+  data: Record<string, any>;
   lang?: string;
 }
+
+const logger = defaultLogger.child('route');
 
 export function parseSlug(
   slug: string,
@@ -80,7 +96,6 @@ export function filterRoutes(routes: Route[], filter: RouteFilter = /.*/) {
   });
 }
 
-
 export async function createRoutesFromFiles(
   folder: string,
   config: RouteConfig,
@@ -93,7 +108,7 @@ export async function createRoutesFromFiles(
     for (const file of viewFiles) {
       const relFile = path.relative(folder, file);
       const viewFile = cleanUrl(relFile, false, false, true);
-      const params = findRouteParams(viewFile, config.params);
+      const params = await optPromise(findRouteParams(viewFile, config.params));
       const slug = parseSlug(viewFile, config.pattern, {
         locale: locale === locales[0] ? '' : locale
       });
@@ -103,6 +118,8 @@ export async function createRoutesFromFiles(
           routes.push({
             file,
             param,
+            data: {},
+            view: viewFile,
             slug: parseRouteParam(slug, param),
             lang: locale,
           });
@@ -111,7 +128,9 @@ export async function createRoutesFromFiles(
         routes.push({
           file,
           slug,
+          data: {},
           param: {},
+          view: viewFile,
           lang: locale,
         });
       }
@@ -119,4 +138,16 @@ export async function createRoutesFromFiles(
   }
 
   return routes;
+}
+
+export async function parseRouteData(routes: Route[], data: RouteData) {
+  for (const [key, value] of Object.entries(data)) {
+    if (key !== '__') {
+      routes = routes.filter(route => route.view === key);
+    }
+
+    for (const route of routes) {
+      route.data = await optPromise(value, route);
+    }
+  }
 }

@@ -18,3 +18,11 @@ export async function batchPromise<T>(
 export async function delay(duration = 0) {
   await new Promise((resolve) => setTimeout(resolve, duration));
 }
+
+export async function optPromise<T>(value: any | Promise<T>, ...args: any[]) {
+  if (typeof value === 'function') {
+    value = value(...args);
+  }
+
+  return value instanceof Promise ? await value : value;
+}

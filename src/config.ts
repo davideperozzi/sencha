@@ -1,6 +1,7 @@
 import builders from './builders';
 import { FetchConfig } from './fetcher';
 import { HealthCheck } from './health';
+import { RouteData, RouteParams } from './route';
 import { DeepPartial } from './types';
 
 export interface TemplateConfig {
@@ -17,10 +18,10 @@ export interface HooksConfig {
   style?: any;
 }
 
-export type RouteParams = Record<string, Record<string, string>[]>;
 export interface RouteConfig {
   pattern: string;
   params?: RouteParams;
+  data?: RouteData;
 }
 
 export type SenchaOptions = DeepPartial<SenchaConfig>;

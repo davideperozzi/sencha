@@ -7,8 +7,9 @@ import { SenchaConfig, SenchaOptions } from './config';
 import { defaultConfig as fetcherDefaultConfig, Fetcher } from './fetcher';
 import { healthCheck } from './health';
 import logger from './logger';
-import { createRoutesFromFiles, filterRoutes, RouteFilter } from './route';
+import { createRoutesFromFiles, filterRoutes, parseRouteData, RouteFilter } from './route';
 import store from './store';
+import { optPromise } from './utils/promise';
 
 const defaultConfig: SenchaConfig = {
   hooks: {},
@@ -113,11 +114,16 @@ export class Sencha {
   }
 
   private async createRoutes() {
-    const { rootDir, route, template, locale: allLocales } = this.config;
+    const { rootDir, route: routeConfig, template, locale: allLocales } = this.config;
     const templateDir = path.join(rootDir, template.root);
     const viewsDir = path.join(templateDir, template.views);
     const locales = Array.isArray(allLocales) ? allLocales : [allLocales];
+    const routes = await createRoutesFromFiles(viewsDir, routeConfig, locales);
 
-    return await createRoutesFromFiles(viewsDir, route, locales);
+    if (routeConfig.data) {
+      await parseRouteData(routes, routeConfig.data);
+    }
+
+    return routes;
   }
 }

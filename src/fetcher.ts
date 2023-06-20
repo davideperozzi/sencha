@@ -9,10 +9,18 @@ import { trimUrl } from './utils/url';
 
 export type FetchOptions = DeepPartial<FetchConfig>;
 
+export interface FetchEndpoint {
+  url: string;
+  afterFetch?: (result: any) => any;
+  beforeFetch?: (url: string, init?: FetcherInit) => void | {
+    url: string;
+    init?: FetcherInit;
+  };
+}
 export interface FetchConfig {
   endpoints: {
-    [key: string]: string;
-  }
+    [key: string]: string | FetchEndpoint;
+  };
 }
 
 export interface FetcherInit<T = any> extends FetchRequestInit {
@@ -52,20 +60,28 @@ export class Fetcher {
 
   isReqCached(url: string, init?: FetcherInit, parse = true) {
     return this.cache.has(this.getReqKey(
-      parse ? this.parseUrl(url) : url,
+      parse ? this.parseUrl(url).url : url,
       init
     ));
   }
 
+  getEndpointUrl(endpoint: string | FetchEndpoint) {
+    return typeof endpoint === 'string' ? endpoint : (endpoint?.url || '');
+  }
+
+  parseEndpoint(endpoint: string | FetchEndpoint) {
+    return typeof endpoint === 'string' ? { url: endpoint } : endpoint;
+  }
+
   parseUrl(url: string, init?: FetcherInit) {
-    let endpoint = '';
+    let endpoint = null;
     let newUrl = url;
 
-    if (init && init.endpoint) {
-      endpoint = this.config.endpoints[init.endpoint];
-    } else {
+    if (init?.endpoint) {
+      endpoint = this.parseEndpoint(this.config.endpoints[init.endpoint]);
+    } else if ( ! url.match(/^https?:\/\//g)) {
       newUrl = url.replace(/^(.*?)\:(.*)$/, (_, api, path) => {
-        endpoint = this.config.endpoints[api];
+        endpoint = this.parseEndpoint(this.config.endpoints[api]);
 
         if ( ! endpoint) {
           this.logger.warn(`endpoint for "${url}" not found`);
@@ -76,14 +92,14 @@ export class Fetcher {
     }
 
     if (endpoint) {
-      newUrl = trimUrl(endpoint) + '/' + trimUrl(newUrl);
+      newUrl = trimUrl(this.getEndpointUrl(endpoint)) + '/' + trimUrl(newUrl);
     }
 
-    return newUrl;
+    return { url: newUrl, endpoint };
   }
 
   async fetch<T>(fullUrl: string, init?: FetcherInit<T>) {
-    const url = this.parseUrl(fullUrl);
+    let { url, endpoint } = this.parseUrl(fullUrl);
     const reqKey = this.getReqKey(url, init);
 
     if (this.requests.has(reqKey)) {
@@ -95,8 +111,21 @@ export class Fetcher {
     if (this.cache.has(reqKey) && this.isReqCacheable(init)) {
       this.logger.debug(`loaded cache for ${fullUrl}`);
 
-
       return this.cache.get(reqKey);
+    }
+
+    if (endpoint && endpoint.beforeFetch) {
+      const beforeResult = endpoint.beforeFetch(url, init);
+
+      if (beforeResult) {
+        if (beforeResult && beforeResult.url) {
+          url = beforeResult.url;
+        }
+
+        if (beforeResult.init) {
+          init = beforeResult.init;
+        }
+      }
     }
 
     const request = this.request(url, init).catch(err => {
@@ -105,11 +134,21 @@ export class Fetcher {
 
     this.requests.set(reqKey, request);
 
-    return await request.then(result => {
+    let result = await request.then(result => {
       this.requests.delete(reqKey);
 
       return result;
     });
+
+    if (endpoint && endpoint.afterFetch && result) {
+      const afterResult = endpoint.afterFetch(result);
+
+      if (afterResult) {
+        result = afterResult;
+      }
+    }
+
+    return result;
   }
 
   private isReqCacheable(init?: FetcherInit) {
@@ -128,7 +167,11 @@ export class Fetcher {
     });
   }
 
-  private async request<T>(url: string, init?: FetcherInit<T>) {
+  private async request<T>(
+    url: string,
+    init?: FetcherInit<T>,
+    endpoint?: FetchEndpoint
+  ) {
     try {
       const reqKey = this.getReqKey(url, init);
       const response = await fetch(url, init);
@@ -136,7 +179,6 @@ export class Fetcher {
 
       if (response.status === 200) {
         if (this.isReqCacheable(init)) {
-          console.log('cache ', reqKey);
           this.cache.set(reqKey, result);
           this.logger.debug(`cached result for ${url}`);
         }
