@@ -3,16 +3,12 @@
   <head>
     <title>Test</title>
 
-    <% /* <% style({ path: 'index.scss' }) %> */ %>
+    <%~ await sencha.style('styles/index.scss') %>
   </head>
   <body>
     <%~ it.body %>
     <footer>Copyright SomeCo, Inc.</footer>
 
-    <% /* <% script({
-      path: 'index.ts',
-      async: true,
-      config: {}
-    }) %> */ %>
+    <%~ await sencha.script('scripts/index.ts', { async: true }) %>
   </body>
 </html>

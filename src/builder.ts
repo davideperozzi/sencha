@@ -25,6 +25,7 @@ export class Builder {
 
   async build(routes: Route[] = []) {
     const renderedRoutes: string[] = [];
+    const errors: any[] = [];
 
     try {
       await batchPromise(
@@ -38,12 +39,15 @@ export class Builder {
         )
       );
     } catch(err) {
+      errors.push(err);
       this.logger.error(err);
     }
 
     this.logger.debug(
       `rendered ${routes.length}/${renderedRoutes.length} routes`
     );
+
+    return { errors, routes };
   }
 
   async tidy(routes: Route[] = []) {

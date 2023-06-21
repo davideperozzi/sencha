@@ -26,7 +26,7 @@ afterAll(() => {
 
 test('health', () => {
   describe('waitForCheck', async () => {
-    expect(await healthCheck([`http://${host}:${port}/`])).toBe(true);
+    expect(await healthCheck([`http://${host}:${port}/`], false)).toBe(true);
     expect(await healthCheck([
       {
         url: `http://${host}XX:${port}/`,
@@ -34,6 +34,6 @@ test('health', () => {
         delay: 10,
         tries: 1
       }
-    ])).toBe(false);
+    ], false)).toBe(false);
   });
 });

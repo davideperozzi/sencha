@@ -9,13 +9,15 @@ await import('./config').then(async (config) => {
 
   for (const options of partials) {
     if (typeof options === 'object') {
-      sencha.configure(options);
+      await sencha.configure(options);
     }
   }
 
   for (const options of partials) {
     if (typeof options === 'function') {
-      sencha.configure(await options(sencha));
+      await sencha.configure(
+        await options(sencha)
+      );
     }
   }
 });

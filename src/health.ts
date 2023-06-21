@@ -12,7 +12,10 @@ export interface HealthCheck {
 
 const logger = defaultLogger.child('health');
 
-export async function healthCheck(checks: (HealthCheck | string)[]) {
+export async function healthCheck(
+  checks: (HealthCheck | string)[],
+  exit = true
+) {
   logger.debug(`check started`);
 
   for (const check of checks) {
@@ -21,6 +24,11 @@ export async function healthCheck(checks: (HealthCheck | string)[]) {
     );
 
     if ( ! result) {
+      if (exit) {
+        logger.fatal(`check failed`);
+        process.exit(1);
+      }
+
       return false;
     }
   }

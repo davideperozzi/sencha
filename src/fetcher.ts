@@ -2,12 +2,11 @@ import deepmerge from '@fastify/deepmerge';
 
 import logger from './logger';
 import store from './store';
-import { DeepPartial } from './types';
 import { uniqueKey } from './utils/object';
 import { isGetRequest } from './utils/request';
 import { trimUrl } from './utils/url';
 
-export type FetchOptions = DeepPartial<FetchConfig>;
+export type FetchOptions = Partial<FetchConfig>;
 
 export interface FetchEndpoint {
   url: string;
@@ -167,11 +166,7 @@ export class Fetcher {
     });
   }
 
-  private async request<T>(
-    url: string,
-    init?: FetcherInit<T>,
-    endpoint?: FetchEndpoint
-  ) {
+  private async request<T>(url: string, init?: FetcherInit<T>) {
     try {
       const reqKey = this.getReqKey(url, init);
       const response = await fetch(url, init);

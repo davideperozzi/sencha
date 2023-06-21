@@ -1,16 +1,12 @@
-import type { Route, Sencha, SenchaOptions, FetcherInit } from '../src';
+import * as sass from 'sass';
+import type { Route, Sencha, SenchaOptions } from '../src';
 
 /** API options */
 export const config: SenchaOptions = {
   health: [ 'https://cat-fact.herokuapp.com/' ],
   fetch: {
     endpoints: {
-      cat: {
-        url: 'https://cat-fact.herokuapp.com/',
-        afterFetch: (result: any) => {
-          return { test: '1' };
-        }
-      }
+      cat: 'https://cat-fact.herokuapp.com/'
     }
   }
 };
@@ -42,35 +38,45 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
           name: route.param.project
         })
       }
-    }
-  // route: '/:locale/:slug',
-  // template: {
-  //   engine: 'eta',
-  //   config: {}
-  // },
-  // hooks: {
-  //   script: {
-  //     render: async (config) => {
-  //       // return Bun.build(src);
-  //     }
-  //   },
-  //   style: {
-  //     render: async (config) => {
-  //       // return sass.build();
-  //     }
-  //   },
-  //   // route: {
-  //   //   parse: () => {},
-  //   //   render: () => {}
-  //   // },
-  //   fetch: {
-  //     start: () => {},
-  //     error: () => {},
-  //     end: () => {},
-  //   },
-  //   filter: {
-  //     richText: (data: any[]) => data.join(','),
-  //   }
-  // }
+    },
+    plugins: [
+      {
+        name: 'richText',
+        priority: 0,
+        filters: {
+          richText: (data: any[]) => data.join(',')
+        },
+        hooks: {
+          configParse: (config) => {
+          },
+          styleCompile: async (resource) => {
+            const { css } = await sass.compileAsync(resource.path, {
+              style: 'compressed'
+            });
+
+            return css;
+          },
+          scriptCompile: async (resource) => {
+            const { outputs } = await Bun.build({
+              entrypoints: [ resource.path ],
+            });
+
+            if ( ! outputs[0]) {
+              throw new Error('no output found');
+            }
+
+            return await outputs[0].text();
+          },
+          buildStart: () => {
+          },
+          buildDone: () => {
+          },
+          buildSuccess: () => {
+          },
+          buildFail: () => {
+          }
+        }
+      }
+    ]
   }
 };
