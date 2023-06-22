@@ -1,13 +1,14 @@
+import fs from 'fs-extra';
 import path from 'node:path';
 
 import deepmerge from '@fastify/deepmerge';
 
-import builders from './builders';
-import { CacheStrategy, HooksConfig, SenchaConfig, SenchaOptions } from './config';
+import { Builder } from './builder';
+import { HooksConfig, SenchaConfig, SenchaOptions } from './config';
 import { defaultConfig as fetcherDefaultConfig, Fetcher } from './fetcher';
 import { healthCheck } from './health';
 import logger from './logger';
-import { callPluginHook } from './plugin';
+import { pluginHook, SenchaPlugin } from './plugin';
 import { ResourceHandler } from './resource';
 import script from './resources/script';
 import style from './resources/style';
@@ -21,20 +22,13 @@ const defaultConfig: SenchaConfig = {
   locale: 'en',
   outDir: 'dist',
   rootDir: process.cwd(),
-  cache: CacheStrategy.ON_EMPTY,
+  cache: false,
   fetch: fetcherDefaultConfig,
   plugins: [],
+  viewsDir: 'templates/views',
   route: {
     pattern: '/:locale/:slug'
   },
-  template: {
-    engine: 'eta',
-    parallel: 500,
-    root: 'templates',
-    views: 'views',
-    partials: 'partials',
-    layouts: 'layouts',
-  }
 };
 
 export class Sencha {
@@ -42,16 +36,13 @@ export class Sencha {
   private config = defaultConfig;
   private fetcher = new Fetcher();
   private merge = deepmerge();
+  private plugins: SenchaPlugin[] = [];
   fetch = this.fetcher.fetch.bind(this.fetcher);
 
   constructor(config?: SenchaOptions) {
     if (config) {
       this.configure(config);
     }
-  }
-
-  get templateDir() {
-    return path.join(this.config.rootDir, this.config.template.root);
   }
 
   get outDir() {
@@ -81,19 +72,10 @@ export class Sencha {
   async pluginHook(
     hook: keyof HooksConfig,
     args: any[] = [],
-    defaultCb?: (...args: any[]) => any
+    fallback?: (...args: any[]) => any,
+    breakCb?: (result: any) => boolean
   ) {
-    let result;
-
-    if (this.config.plugins) {
-      result = await callPluginHook(this.config.plugins, hook, ...args);
-    }
-
-    if (result) {
-      return result;
-    }
-
-    return defaultCb ? defaultCb(...args) : undefined;
+    return await pluginHook(hook, args, this.plugins, fallback, breakCb);
   }
 
   async configure(options: SenchaOptions) {
@@ -103,14 +85,26 @@ export class Sencha {
 
     await this.pluginHook('configParse', [this.config]);
     this.fetcher.configure(this.config.fetch);
+
+    if (this.config.plugins) {
+      this.plugins = this.config.plugins
+        .map((plugin) => {
+          if (typeof plugin === 'function') {
+            return plugin(this);
+          }
+
+          return plugin;
+        })
+        .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    }
   }
 
-  async build(filter: RouteFilter = /.*/, cache?: CacheStrategy) {
+  async build(filter: RouteFilter = /.*/, cache = false) {
     this.logger.debug(`build started with filters: ${JSON.stringify(filter)}`);
 
     const { rootDir, outDir } = this.config;
+    const builder = new Builder({ outDir, plugins: this.plugins, parallel: 500 });
     const perfTime = measure(this.logger);
-    const builder = this.createBuilder();
     const allRoutes = await this.createRoutes();
     const filteredRoutes = filterRoutes(allRoutes, filter);
     const resources = [
@@ -119,6 +113,8 @@ export class Sencha {
     ];
 
     perfTime.start('build');
+
+    await fs.mkdir(outDir, { recursive: true });
     this.loadGlobals(resources);
     await this.pluginHook('buildStart', [{
       routes: filteredRoutes,
@@ -141,7 +137,15 @@ export class Sencha {
         await resource.map.build(async (file) => {
           return await this.pluginHook(
             `${resource.name}Compile` as keyof HooksConfig,
-            [file]
+            [file],
+            () => '',
+            (result: any) => {
+              if (typeof result === 'string') {
+                file.output = result;
+              }
+
+              return false;
+            }
           );
         }, cache || this.config.cache);
       } catch(err) {
@@ -166,21 +170,6 @@ export class Sencha {
     }
   }
 
-  private createBuilder() {
-    const { engine, parallel } = this.config.template;
-    const builder = builders[engine];
-
-    if ( ! builder) {
-      this.logger.fatal(`template engine "${engine}" not found`);
-    }
-
-    return new builder({
-      rootDir: this.templateDir,
-      outDir: this.outDir,
-      parallel
-    });
-  }
-
   private loadGlobals(resources: ResourceHandler[]) {
     const resObj: Record<string, (...args: any[]) => any> = {};
     const filters: Record<string, (...args: any[]) => any> = {};
@@ -198,7 +187,7 @@ export class Sencha {
       };
     }
 
-    for (const plugin of this.config.plugins || []) {
+    for (const plugin of this.plugins || []) {
       if (plugin.filters) {
         for (const name in plugin.filters) {
           filters[name] = plugin.filters[name];
@@ -217,11 +206,13 @@ export class Sencha {
   }
 
   private async createRoutes() {
-    const { rootDir, route, template, locale: allLocales } = this.config;
-    const templateDir = path.join(rootDir, template.root);
-    const viewsDir = path.join(templateDir, template.views);
+    const { rootDir, viewsDir, route, locale: allLocales } = this.config;
     const locales = Array.isArray(allLocales) ? allLocales : [allLocales];
-    const routes = await createRoutesFromFiles(viewsDir, route, locales);
+    const routes = await createRoutesFromFiles(
+      path.join(rootDir, viewsDir),
+      route,
+      locales
+    );
 
     if (route.data) {
       await parseRouteData(routes, route.data);

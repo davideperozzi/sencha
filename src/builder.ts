@@ -2,14 +2,15 @@ import fs from 'fs-extra';
 import path from 'node:path';
 
 import logger from './logger';
-import { Route } from './route';
+import { pluginHook, SenchaPlugin } from './plugin';
+import { Route, RouteResult } from './route';
 import { cleanDir, scanHtml } from './utils/files';
 import { batchPromise } from './utils/promise';
 
 export interface BuilderConfig {
   parallel: number;
-  rootDir: string;
   outDir: string;
+  plugins: SenchaPlugin[];
 }
 
 export class Builder {
@@ -31,12 +32,42 @@ export class Builder {
       await batchPromise(
         routes,
         this.config.parallel,
-        async (route) => this.compile(route).then(
-          async (html) => {
-            await this.render(route, html);
+        async (route) => {
+          let html = await pluginHook(
+            'viewCompile',
+            [route],
+            this.config.plugins
+          );
+
+          if (typeof html !== 'string') {
+            html = await this.compile(route);
+          }
+
+          if (typeof html === 'string') {
+            const result: RouteResult = { route, html };
+
+            html = await pluginHook(
+              'viewParse',
+              [result],
+              this.config.plugins,
+              async () => html,
+              (newResult) => {
+                result.html = newResult;
+
+                return false;
+              }
+            );
+
+            await pluginHook(
+              'viewRender',
+              [result],
+              this.config.plugins,
+              async () => await this.render(result)
+            );
+
             renderedRoutes.push(route.slug);
           }
-        )
+        }
       );
     } catch(err) {
       errors.push(err);
@@ -64,7 +95,8 @@ export class Builder {
     await cleanDir(this.config.outDir);
   }
 
-  async render(route: Route, html: string) {
+  async render(result: RouteResult) {
+    const { route, html } = result;
     const outFile = path.join(this.config.outDir, route.slug, 'index.html');
     const outDir = path.dirname(outFile);
 
@@ -73,6 +105,6 @@ export class Builder {
   }
 
   async compile(route: Route): Promise<string> {
-    return '';
+    return await Bun.file(route.file).text();
   }
 }

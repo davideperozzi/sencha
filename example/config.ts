@@ -1,5 +1,5 @@
-import * as sass from 'sass';
 import type { Route, Sencha, SenchaOptions } from '../src';
+import * as plugins from '../src/plugins';
 
 /** API options */
 export const config: SenchaOptions = {
@@ -17,7 +17,6 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
   await sencha.fetch('cat:facts', { store: 'cat.facts', default: [] });
 
   return {
-    locale: ['en', 'fr', 'es'],
     route: {
       params: {
         'projects/[project]': [
@@ -40,43 +39,11 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
       }
     },
     plugins: [
-      {
-        name: 'richText',
-        priority: 0,
-        filters: {
-          richText: (data: any[]) => data.join(',')
-        },
-        hooks: {
-          configParse: (config) => {
-          },
-          styleCompile: async (resource) => {
-            const { css } = await sass.compileAsync(resource.path, {
-              style: 'compressed'
-            });
-
-            return css;
-          },
-          scriptCompile: async (resource) => {
-            const { outputs } = await Bun.build({
-              entrypoints: [ resource.path ],
-            });
-
-            if ( ! outputs[0]) {
-              throw new Error('no output found');
-            }
-
-            return await outputs[0].text();
-          },
-          buildStart: () => {
-          },
-          buildDone: () => {
-          },
-          buildSuccess: () => {
-          },
-          buildFail: () => {
-          }
-        }
-      }
+      plugins.eta(),
+      plugins.pug(),
+      plugins.esbuild(),
+      plugins.sass(),
+      plugins.postcss(),
     ]
   }
 };

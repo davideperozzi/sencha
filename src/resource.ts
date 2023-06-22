@@ -1,7 +1,6 @@
 import fs from 'fs-extra';
 import path from 'node:path';
 
-import { CacheStrategy } from './config';
 import logger from './logger';
 import { cleanUrl } from './utils/url';
 
@@ -47,10 +46,10 @@ export class ResourceMap extends Map<string, ResourceFile> {
 
   async build(
     cb: (resource: ResourceFile) => Promise<string|void>,
-    cache: CacheStrategy = CacheStrategy.ALWAYS
+    cache = false
   ) {
     for (const [_, file] of this) {
-      if (cache === CacheStrategy.ON_EMPTY && fs.existsSync(file.dest)) {
+      if (cache && fs.existsSync(file.dest)) {
         this.logger.debug(`skipping ${file.path} (cache)`);
         continue;
       }

@@ -1,4 +1,3 @@
-import builders from './builders';
 import { FetchConfig, Fetcher } from './fetcher';
 import { HealthCheck } from './health';
 import { SenchaPlugin } from './plugin';
@@ -15,15 +14,6 @@ declare global {
     style: (sourceFile: string, config?: any) => Promise<any>;
     script: (sourceFile: string, config?: any) => Promise<any>;
   };
-}
-
-export interface TemplateConfig {
-  engine: keyof typeof builders;
-  parallel: number;
-  root: string;
-  views: string;
-  partials: string;
-  layouts: string;
 }
 
 export interface BuildResult {
@@ -43,6 +33,9 @@ export interface HooksConfig {
   styleCompile?: OptPromise<(resource: ResourceFile) => void>;
   styleParse?: OptPromise<(resource: ResourceFile) => string>;
   configParse?: OptPromise<(config: SenchaConfig) => void>;
+  viewCompile?: OptPromise<(route: Route) => string | void>;
+  viewParse?: OptPromise<(result: { route: Route, html: string }) => void>;
+  viewRender?: OptPromise<(result: { route: Route, html: string }) => boolean>;
 }
 
 export interface RouteConfig {
@@ -51,21 +44,16 @@ export interface RouteConfig {
   data?: RouteData;
 }
 
-export enum CacheStrategy {
-  ON_EMPTY = 'on-empty',
-  ALWAYS = 'always'
-}
-
 export type SenchaOptions = Partial<SenchaConfig>;
 export interface SenchaConfig {
-  route: RouteConfig;
-  health?: (HealthCheck | string)[];
-  locale: string[] | string;
-  fetch: FetchConfig;
   rootDir: string;
   outDir: string;
-  template: TemplateConfig;
-  plugins?: SenchaPlugin[];
-  cache?: CacheStrategy;
+  viewsDir: string;
+  route: RouteConfig;
+  cache?: boolean;
+  locale: string[] | string;
+  fetch: FetchConfig;
+  health?: (HealthCheck | string)[];
+  plugins?: (SenchaPlugin | ((sencha: any) => SenchaPlugin))[];
 }
 

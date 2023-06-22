@@ -3,6 +3,7 @@ import deepmerge from '@fastify/deepmerge';
 import logger from './logger';
 import store from './store';
 import { uniqueKey } from './utils/object';
+import { measure } from './utils/perf';
 import { isGetRequest } from './utils/request';
 import { trimUrl } from './utils/url';
 
@@ -38,6 +39,7 @@ export class Fetcher {
   private config = defaultConfig;
   private merge = deepmerge();
   private cache = new Map<string, any>();
+  private measure = measure(this.logger);
   private requests = new Map<string, Promise<any>>();
 
   constructor(options?: FetchOptions) {
@@ -168,11 +170,15 @@ export class Fetcher {
 
   private async request<T>(url: string, init?: FetcherInit<T>) {
     try {
+      this.measure.start('request');
+
       const reqKey = this.getReqKey(url, init);
       const response = await fetch(url, init);
       const result = await response.json<T>();
 
       if (response.status === 200) {
+        this.measure.end('request', `${url} (${response.status})`);
+
         if (this.isReqCacheable(init)) {
           this.cache.set(reqKey, result);
           this.logger.debug(`cached result for ${url}`);

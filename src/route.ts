@@ -21,9 +21,14 @@ export interface Route {
   file: string;
   slug: string;
   view: string;
+  lang?: string;
   param: Record<string, any>;
   data: Record<string, any>;
-  lang?: string;
+}
+
+export interface RouteResult {
+  route: Route;
+  html: string;
 }
 
 const logger = defaultLogger.child('route');

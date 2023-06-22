@@ -1,23 +1,42 @@
 import { HooksConfig } from './config';
-import { optPromise } from './utils/promise';
+import { OptPromise, optPromise } from './utils/promise';
 
 export interface SenchaPlugin {
-  name: string;
   priority?: number;
   hooks?: HooksConfig;
   filters?: Record<string, (...vars: any[]) => any>;
 }
 
-export async function callPluginHook(
-  plugins: SenchaPlugin[],
+export async function pluginHook(
   name: keyof HooksConfig,
-  ...args: any[]
+  args: any[] = [],
+  plugins?: SenchaPlugin[],
+  fallback?: OptPromise<(...args: any[]) => any>,
+  breakCb?: (result: any) => boolean
 ) {
-  for (const plugin of plugins) {
-    const hook = plugin.hooks?.[name] as any;
+  let result;
 
-    if (hook && typeof hook === 'function') {
-      return optPromise(hook(...args));
+  if (plugins) {
+    for (const plugin of plugins) {
+      const hook = plugin.hooks?.[name] as any;
+
+      if (hook && typeof hook === 'function') {
+        const newResult = await optPromise(hook(...args));
+
+        if (newResult) {
+          result = newResult;
+        }
+
+        if (breakCb && breakCb(result)) {
+          break;
+        }
+      }
     }
   }
+
+  if (result) {
+    return result;
+  }
+
+  return fallback ? await optPromise(fallback(...args)) : undefined;
 }

@@ -1,3 +1,5 @@
+$testVar: red;
+
 html, body {
-  background: green;
+  background: $testVar;
 }
