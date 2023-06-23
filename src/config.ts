@@ -1,10 +1,10 @@
-import { FetchConfig, Fetcher } from './fetcher';
-import { HealthCheck } from './health';
-import { SenchaPlugin } from './plugin';
-import { ResourceFile } from './resource';
-import { Route, RouteData, RouteParams } from './route';
-import store from './store';
-import { OptPromise } from './utils/promise';
+import { FetchConfig, Fetcher } from './fetcher.ts';
+import { HealthCheck } from './health.ts';
+import { SenchaPlugin } from './plugin.ts';
+import { ResourceFile } from './resource.ts';
+import { Route, RouteData, RouteParams } from './route.ts';
+import store from './store.ts';
+import { OptPromise } from './utils/promise.ts';
 
 declare global {
   var sencha: {

@@ -1,5 +1,5 @@
-import { HooksConfig } from './config';
-import { OptPromise, optPromise } from './utils/promise';
+import { HooksConfig } from './config.ts';
+import { OptPromise, optPromise } from './utils/mod.ts';
 
 export interface SenchaPlugin {
   priority?: number;

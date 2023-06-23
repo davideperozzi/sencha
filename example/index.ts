@@ -1,10 +1,10 @@
-import { logger, LogLevel, Sencha } from '../src';
+import { logger, LogLevel, Sencha } from '../src/mod.ts';
 
 logger.stream(LogLevel.DEBUG);
 
 const sencha = new Sencha();
 
-await import('./config').then(async (config) => {
+await import('./config.ts').then(async (config) => {
   const partials = Object.values(config);
 
   for (const options of partials) {
@@ -15,12 +15,10 @@ await import('./config').then(async (config) => {
 
   for (const options of partials) {
     if (typeof options === 'function') {
-      await sencha.configure(
-        await options(sencha)
-      );
+      await sencha.configure(await options(sencha));
     }
   }
 });
 
-await sencha.build();
 
+await sencha.build();

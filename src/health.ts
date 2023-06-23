@@ -1,5 +1,5 @@
-import { default as defaultLogger } from './logger';
-import { delay } from './utils/promise';
+import { default as defaultLogger } from './logger/mod.ts';
+import { delay } from './utils/mod.ts';
 
 export interface HealthCheck {
   url: string;
@@ -26,7 +26,7 @@ export async function healthCheck(
     if ( ! result) {
       if (exit) {
         logger.fatal(`check failed`);
-        process.exit(1);
+        Deno.exit(1);
       }
 
       return false;

@@ -1,10 +1,7 @@
-import path from 'node:path';
+import * as path from 'std/path/mod.ts';
 
-import { RouteConfig } from './';
-import { scanDir } from './utils/files';
-import { optPromise } from './utils/promise';
-import { cleanUrl } from './utils/url';
-import { default as defaultLogger } from './logger';
+import { RouteConfig } from './config.ts';
+import { cleanUrl, optPromise, scanDir } from './utils/mod.ts';
 
 export type RouteDataEntry = Promise<Record<string, any>> | Record<string, any>;
 export type RouteData = Record<
@@ -30,8 +27,6 @@ export interface RouteResult {
   route: Route;
   html: string;
 }
-
-const logger = defaultLogger.child('route');
 
 export function parseSlug(
   slug: string,
@@ -107,7 +102,7 @@ export async function createRoutesFromFiles(
   locales: string[] = []
 ) {
   const routes: Route[] = [];
-  const viewFiles = await scanDir(folder, true);
+  const viewFiles = await scanDir(folder);
 
   for (const locale of locales) {
     for (const file of viewFiles) {

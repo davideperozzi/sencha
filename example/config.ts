@@ -1,5 +1,5 @@
-import type { Route, Sencha, SenchaOptions } from '../src';
-import * as plugins from '../src/plugins';
+import type { Route, Sencha, SenchaOptions } from '../src/mod.ts';
+import * as plugins from '../src/plugins/mod.ts';
 
 /** API options */
 export const config: SenchaOptions = {
@@ -44,6 +44,7 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
       plugins.esbuild(),
       plugins.sass(),
       plugins.postcss(),
+      plugins.lightningcss(),
     ]
   }
 };

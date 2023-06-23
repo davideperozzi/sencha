@@ -1,4 +1,4 @@
-import { Logger } from '../logger';
+import { Logger } from '../logger/mod.ts';
 
 export const measure = (logger: Logger) => {
   const measures = new Map<string, number>();

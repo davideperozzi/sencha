@@ -1,4 +1,4 @@
-import { EventEmitter } from 'node:events';
+import EventEmitter from 'https://deno.land/x/events/mod.ts';
 
 export type LogMessage = string | any;
 

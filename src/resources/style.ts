@@ -1,4 +1,4 @@
-import { ResourceHandler, ResourceMap } from '../resource';
+import { ResourceHandler, ResourceMap } from '../resource.ts';
 
 export default function(rootDir: string, outDir: string): ResourceHandler {
   return {

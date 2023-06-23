@@ -1,79 +1,61 @@
-import fs from 'fs-extra';
-import path from 'node:path';
+import * as fs from 'std/fs/mod.ts';
+import * as path from 'std/path/mod.ts';
 
-export async function scanDir(
-  dirPath: string,
-  flat = false,
-  filter?: (name: string) => boolean
-): Promise<any[]> {
-  const entities = await fs.readdir(dirPath);
+export async function scanDir(dirPath: string): Promise<string[]> {
+  const files: string[] = [];
 
-  return Promise.all(
-    entities
-      .filter(entity => filter ? filter(path.join(dirPath, entity)) : true)
-      .map(async (entity) => {
-        const filePath = path.join(dirPath, entity);
-        const fileStat = await fs.lstat(filePath);
+  for await (const entry of Deno.readDir(dirPath)) {
+    const entryPath = path.join(dirPath, entry.name);
 
-        return fileStat.isDirectory() ?
-          await (
-            await scanDir(filePath, flat, filter)
-          ).flat(flat ? Infinity : 0) :
-          filePath;
-      }).flat(flat ? Infinity : 0)
-  ).then(files => flat ? files.flat(Infinity) : files);
+    if (entry.isDirectory) {
+      files.push(...(await scanDir(entryPath)));
+    } else {
+      files.push(entryPath);
+    }
+  }
+
+  return files.filter(entries => entries.length > 0);
 }
 
-export async function scanHtml(dirPath: string, flat = false) {
-  return (await scanDir(dirPath, flat))
+export async function scanHtml(dirPath: string) {
+  return (await scanDir(dirPath))
     .filter((file) => file.endsWith('.html'));
 }
 
-export async function deepReadDir(
-  dirPath: string,
-  flat = false,
-  filter?: (name: string) => boolean
-): Promise<any[]> {
-  const entities = await fs.readdir(dirPath);
-
-  return Promise.all(
-    entities
-      .filter(entity => filter ? filter(path.join(dirPath, entity)) : true)
-      .map(async (entity) => {
-        const filePath = path.join(dirPath, entity);
-        const fileStat = await fs.lstat(filePath);
-
-        return fileStat.isDirectory() ?
-          await (await deepReadDir(filePath, flat, filter)).flat(flat ? Infinity : 0) :
-          filePath;
-      }).flat(flat ? Infinity : 0)
-  ).then(files => flat ? files.flat(Infinity) : files);
-}
-
 export async function cleanDir(dir: string, first = true) {
-  if ( ! fs.existsSync(dir)) {
+  if ( ! await fs.exists(dir)) {
     return;
   }
 
-  const stat = await fs.stat(dir);
+  const stat = await Deno.stat(dir);
 
-  if ( ! stat.isDirectory()) {
+  if ( ! stat.isDirectory) {
     return;
   }
 
-  let files = await fs.readdir(dir);
+  for await (const file of Deno.readDir(dir)) {
+    const filePath = path.join(dir, file.name);
 
-  if (files.length > 0) {
-    for (let i = 0; i < files.length; i++) {
-      await cleanDir(path.join(dir, files[i]), false);
-    }
+    await cleanDir(filePath, false);
+  }
 
-    files = await fs.readdir(dir);
+  const files: string[] = [];
+
+  for await (const file of Deno.readDir(dir)) {
+    files.push(path.join(dir, file.name));
   }
 
   if (files.length == 0 && !first) {
     try {
-      await fs.rmdir(dir);
+      await Deno.remove(dir);
     } catch {}
   }
+}
+
+export async function fileWrite(path: string, content: string) {
+  await Deno.writeTextFile(path, content);
+}
+
+export async function fileRead(path: string) {
+  return await Deno.readTextFile(path);
 }

@@ -1,11 +1,8 @@
-import deepmerge from '@fastify/deepmerge';
+import { deepMerge } from 'std/collections/deep_merge.ts';
 
-import logger from './logger';
-import store from './store';
-import { uniqueKey } from './utils/object';
-import { measure } from './utils/perf';
-import { isGetRequest } from './utils/request';
-import { trimUrl } from './utils/url';
+import logger from './logger/mod.ts';
+import store from './store.ts';
+import { uniqueKey, measure, isGetRequest, trimUrl } from './utils/mod.ts';
 
 export type FetchOptions = Partial<FetchConfig>;
 
@@ -23,7 +20,7 @@ export interface FetchConfig {
   };
 }
 
-export interface FetcherInit<T = any> extends FetchRequestInit {
+export interface FetcherInit<T = any> extends RequestInit {
   store?: string;
   endpoint?: string,
   noCache?: boolean;
@@ -37,7 +34,6 @@ export const defaultConfig: FetchConfig = {
 export class Fetcher {
   private logger = logger.child('fetch');
   private config = defaultConfig;
-  private merge = deepmerge();
   private cache = new Map<string, any>();
   private measure = measure(this.logger);
   private requests = new Map<string, Promise<any>>();
@@ -51,7 +47,7 @@ export class Fetcher {
   configure(options: FetchOptions) {
     this.logger.debug(`loaded configuration`);
 
-    this.config = this.merge(this.config, options as FetchConfig);
+    this.config = deepMerge<any>(this.config, options as FetchConfig);
   }
 
   clear() {
@@ -174,7 +170,7 @@ export class Fetcher {
 
       const reqKey = this.getReqKey(url, init);
       const response = await fetch(url, init);
-      const result = await response.json<T>();
+      const result = await response.json();
 
       if (response.status === 200) {
         this.measure.end('request', `${url} (${response.status})`);

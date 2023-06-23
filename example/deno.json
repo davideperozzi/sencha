@@ -1,0 +1,6 @@
+{
+  "importMap": "../imports.json",
+  "tasks": {
+    "build": "deno run --allow-net --allow-ffi --allow-run --allow-env --allow-read --allow-write --watch ./index.ts"
+  }
+}

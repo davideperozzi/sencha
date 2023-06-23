@@ -1,27 +1,26 @@
-import fs from 'fs-extra';
-import path from 'node:path';
+import * as fs from 'std/fs/mod.ts';
+import * as path from 'std/path/mod.ts';
+import { deepMerge } from 'std/collections/deep_merge.ts';
 
-import deepmerge from '@fastify/deepmerge';
-
-import { Builder } from './builder';
-import { HooksConfig, SenchaConfig, SenchaOptions } from './config';
-import { defaultConfig as fetcherDefaultConfig, Fetcher } from './fetcher';
-import { healthCheck } from './health';
-import logger from './logger';
-import { pluginHook, SenchaPlugin } from './plugin';
-import { ResourceHandler } from './resource';
-import script from './resources/script';
-import style from './resources/style';
+import { Builder } from './builder.ts';
+import { HooksConfig, SenchaConfig, SenchaOptions } from './config.ts';
+import { defaultConfig as fetcherDefaultConfig, Fetcher } from './fetcher.ts';
+import { healthCheck } from './health.ts';
+import logger from './logger/mod.ts';
+import { pluginHook, SenchaPlugin } from './plugin.ts';
+import { ResourceHandler } from './resource.ts';
+import script from './resources/script.ts';
+import style from './resources/style.ts';
 import {
   createRoutesFromFiles, filterRoutes, parseRouteData, RouteFilter,
-} from './route';
-import store from './store';
-import { measure } from './utils/perf';
+} from './route.ts';
+import store from './store.ts';
+import { measure } from './utils/mod.ts';
 
 const defaultConfig: SenchaConfig = {
   locale: 'en',
   outDir: 'dist',
-  rootDir: process.cwd(),
+  rootDir: Deno.cwd(),
   cache: false,
   fetch: fetcherDefaultConfig,
   plugins: [],
@@ -32,10 +31,9 @@ const defaultConfig: SenchaConfig = {
 };
 
 export class Sencha {
-  private logger = logger.child('sencha');
+  readonly logger = logger.child('sencha');
   private config = defaultConfig;
   private fetcher = new Fetcher();
-  private merge = deepmerge();
   private plugins: SenchaPlugin[] = [];
   fetch = this.fetcher.fetch.bind(this.fetcher);
 
@@ -46,7 +44,15 @@ export class Sencha {
   }
 
   get outDir() {
-    return path.join(this.config.rootDir, this.config.outDir);
+    return this.path(this.config.outDir);
+  }
+
+  get rootDir() {
+    return this.path();
+  }
+
+  get viewsDir() {
+    return this.path(this.config.viewsDir);
   }
 
   get store() {
@@ -81,7 +87,7 @@ export class Sencha {
   async configure(options: SenchaOptions) {
     this.logger.debug(`loaded configuration`);
 
-    this.config = this.merge(this.config, options as SenchaConfig);
+    this.config = deepMerge<any>(this.config, options as SenchaConfig);
 
     await this.pluginHook('configParse', [this.config]);
     this.fetcher.configure(this.config.fetch);
@@ -102,19 +108,20 @@ export class Sencha {
   async build(filter: RouteFilter = /.*/, cache = false) {
     this.logger.debug(`build started with filters: ${JSON.stringify(filter)}`);
 
-    const { rootDir, outDir } = this.config;
-    const builder = new Builder({ outDir, plugins: this.plugins, parallel: 500 });
+    const plugins = this.plugins;
+    const outDir = this.outDir;
+    const builder = new Builder({ plugins, outDir, parallel: 500 });
     const perfTime = measure(this.logger);
     const allRoutes = await this.createRoutes();
     const filteredRoutes = filterRoutes(allRoutes, filter);
     const resources = [
-      style(rootDir, outDir),
-      script(rootDir, outDir)
+      style(this.rootDir, outDir),
+      script(this.rootDir, outDir)
     ];
 
     perfTime.start('build');
 
-    await fs.mkdir(outDir, { recursive: true });
+    await fs.ensureDir(outDir);
     this.loadGlobals(resources);
     await this.pluginHook('buildStart', [{
       routes: filteredRoutes,
@@ -206,13 +213,9 @@ export class Sencha {
   }
 
   private async createRoutes() {
-    const { rootDir, viewsDir, route, locale: allLocales } = this.config;
+    const { route, locale: allLocales } = this.config;
     const locales = Array.isArray(allLocales) ? allLocales : [allLocales];
-    const routes = await createRoutesFromFiles(
-      path.join(rootDir, viewsDir),
-      route,
-      locales
-    );
+    const routes = await createRoutesFromFiles(this.viewsDir, route, locales);
 
     if (route.data) {
       await parseRouteData(routes, route.data);

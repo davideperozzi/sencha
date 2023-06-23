@@ -1,0 +1,11 @@
+{
+  "importMap": "./imports.json",
+  "tasks": {
+    "dev": "deno run --watch ./example/index.ts"
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["no-explicit-any"]
+    }
+  }
+}

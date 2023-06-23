@@ -1,7 +1,7 @@
-import pug from 'pug';
+import pug from 'npm:pug';
 
-import { Sencha } from '../sencha';
-import { SenchaPlugin } from '../plugin';
+import { SenchaPlugin } from '../plugin.ts';
+import { Sencha } from '../sencha.ts';
 
 export interface PugPluginConifg extends pug.Options {}
 
@@ -9,7 +9,7 @@ export default (config: PugPluginConifg = {}) => {
   return (sencha: Sencha) => {
     return {
       hooks: {
-        viewCompile: async (route) => {
+        viewCompile: (route) => {
           if (route.file.endsWith('.pug')) {
             return pug.renderFile(route.file, {
               basedir: sencha.path('templates'),

@@ -1,8 +1,8 @@
-import path from 'node:path';
+import { Eta } from 'npm:eta';
+import * as path from "std/path/mod.ts";
 
-import { Eta } from '../../node_modules/eta/dist/eta.module.mjs';
-import { Sencha } from '../sencha';
-import { SenchaPlugin } from '../plugin';
+import { SenchaPlugin } from '../plugin.ts';
+import { Sencha } from '../sencha.ts';
 
 export interface EtaPluginConfig {}
 
@@ -15,7 +15,10 @@ export default (config: EtaPluginConfig = {}) => {
       hooks: {
         viewCompile: async (route) => {
           if (route.file.endsWith('.eta')) {
-            return await eta.renderAsync(path.relative(dir, route.file), {});
+            return await eta.renderAsync(
+              path.relative(dir, route.file),
+              {}
+            );
           }
         }
       }

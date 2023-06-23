@@ -1,8 +1,8 @@
-import fs from 'fs-extra';
-import path from 'node:path';
+import * as fs from 'std/fs/mod.ts';
+import * as path from 'std/path/mod.ts';
 
-import logger from './logger';
-import { cleanUrl } from './utils/url';
+import logger from './logger/mod.ts';
+import { cleanUrl, fileWrite } from './utils/mod.ts';
 
 export interface ResourceFile {
   url: string;
@@ -63,8 +63,8 @@ export class ResourceMap extends Map<string, ResourceFile> {
 
     for (const [_, file] of this) {
       if (file.output) {
-        await fs.mkdir(path.dirname(file.dest), { recursive: true });
-        await Bun.write(file.dest, file.output);
+        await fs.ensureDir(path.dirname(file.dest));
+        await fileWrite(file.dest, file.output);
       }
     }
   }

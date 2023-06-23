@@ -1,15 +1,16 @@
-import fs from 'fs-extra';
-import path from 'node:path';
+import * as path from 'std/path/mod.ts';
+import * as fs from 'std/fs/mod.ts';
 
-import logger from './logger';
-import { pluginHook, SenchaPlugin } from './plugin';
-import { Route, RouteResult } from './route';
-import { cleanDir, scanHtml } from './utils/files';
-import { batchPromise } from './utils/promise';
+import logger from './logger/mod.ts';
+import { pluginHook, SenchaPlugin } from './plugin.ts';
+import { Route, RouteResult } from './route.ts';
+import {
+  batchPromise, cleanDir, fileRead, fileWrite, scanHtml,
+} from './utils/mod.ts';
 
 export interface BuilderConfig {
-  parallel: number;
   outDir: string;
+  parallel: number;
   plugins: SenchaPlugin[];
 }
 
@@ -83,11 +84,11 @@ export class Builder {
 
   async tidy(routes: Route[] = []) {
     const files = routes.map((route) => this.getOutFile(route));
-    const pages = await scanHtml(this.config.outDir, true);
+    const pages = await scanHtml(this.config.outDir);
 
     for (const page of pages) {
       if ( ! files.includes(page)) {
-        await fs.remove(page);
+        await Deno.remove(page);
         this.logger.debug(`removed ${page}`);
       }
     }
@@ -100,11 +101,11 @@ export class Builder {
     const outFile = path.join(this.config.outDir, route.slug, 'index.html');
     const outDir = path.dirname(outFile);
 
-    await fs.mkdir(outDir, { recursive: true });
-    await Bun.write(outFile, html);
+    await fs.ensureDir(outDir);
+    await fileWrite(outFile, html);
   }
 
   async compile(route: Route): Promise<string> {
-    return await Bun.file(route.file).text();
+    return await fileRead(route.file);
   }
 }

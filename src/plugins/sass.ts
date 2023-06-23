@@ -1,6 +1,6 @@
-import * as sass from 'sass';
+import * as sass from 'npm:sass';
 
-import { SenchaPlugin } from '..';
+import { SenchaPlugin } from '../plugin.ts';
 
 export interface SassPluginOptions extends sass.Options<'async'> {}
 
