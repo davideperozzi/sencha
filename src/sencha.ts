@@ -1,13 +1,13 @@
+import { deepMerge } from 'std/collections/deep_merge.ts';
 import * as fs from 'std/fs/mod.ts';
 import * as path from 'std/path/mod.ts';
-import { deepMerge } from 'std/collections/deep_merge.ts';
 
 import { Builder } from './builder.ts';
 import { HooksConfig, SenchaConfig, SenchaOptions } from './config.ts';
 import { defaultConfig as fetcherDefaultConfig, Fetcher } from './fetcher.ts';
 import { healthCheck } from './health.ts';
 import logger from './logger/mod.ts';
-import { pluginHook, SenchaPlugin } from './plugin.ts';
+import { pluginHook, pluginHookSync, SenchaPlugin } from './plugin.ts';
 import { ResourceHandler } from './resource.ts';
 import script from './resources/script.ts';
 import style from './resources/style.ts';
@@ -24,7 +24,7 @@ const defaultConfig: SenchaConfig = {
   cache: false,
   fetch: fetcherDefaultConfig,
   plugins: [],
-  viewsDir: 'templates/views',
+  viewsDir: 'views',
   route: {
     pattern: '/:locale/:slug'
   },
@@ -75,13 +75,20 @@ export class Sencha {
     return true;
   }
 
-  async pluginHook(
+  pluginHook(
     hook: keyof HooksConfig,
     args: any[] = [],
     fallback?: (...args: any[]) => any,
-    breakCb?: (result: any) => boolean
+    breakCb?: (result: any) => boolean,
+    sync = false
   ) {
-    return await pluginHook(hook, args, this.plugins, fallback, breakCb);
+    return (sync ? pluginHookSync : pluginHook)(
+      hook,
+      args,
+      this.plugins,
+      fallback,
+      breakCb
+    );
   }
 
   async configure(options: SenchaOptions) {
@@ -122,7 +129,7 @@ export class Sencha {
     perfTime.start('build');
 
     await fs.ensureDir(outDir);
-    this.loadGlobals(resources);
+    await this.loadGlobals(resources);
     await this.pluginHook('buildStart', [{
       routes: filteredRoutes,
       timeMs: 0,
@@ -177,19 +184,21 @@ export class Sencha {
     }
   }
 
-  private loadGlobals(resources: ResourceHandler[]) {
+  private async loadGlobals(resources: ResourceHandler[]) {
     const resObj: Record<string, (...args: any[]) => any> = {};
     const filters: Record<string, (...args: any[]) => any> = {};
 
     for (const resource of resources) {
-      resObj[resource.name] = async (sourceFile: string, ...args: []) => {
+      resObj[resource.name] = (sourceFile: string, ...args: []) => {
         const { input, file } = resource.map.include(sourceFile);
         const hookName = `${resource.name}Parse` as keyof HooksConfig;
 
-        return await this.pluginHook(
+        return this.pluginHook(
           hookName,
           [input, file],
-          (input, file) => resource.parse(file, ...args)
+          (_, file) => resource.parse(file, ...args),
+          () => false,
+          true
         );
       };
     }
@@ -202,14 +211,22 @@ export class Sencha {
       }
     }
 
-    return globalThis.sencha = {
-      store: store,
-      fetch: this.fetch,
-      filters,
-      script: async () => {},
-      style: async () => {},
-      ...resObj
+    const globals = {
+      sencha: {
+        store: store,
+        fetch: this.fetch,
+        filters,
+        script: () => {},
+        style: () => {},
+        ...resObj
+      }
     };
+
+    await this.pluginHook('globalsLoad', [globals]);
+
+    for (const name in globals) {
+      (globalThis as any)[name] = (globals as any)[name];
+    }
   }
 
   private async createRoutes() {

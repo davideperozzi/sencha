@@ -197,6 +197,8 @@
     "specifiers": {
       "eta": "eta@3.0.3",
       "lightningcss@1.21.0": "lightningcss@1.21.0",
+      "nunjucks-async-loader@2.1.1": "nunjucks-async-loader@2.1.1_nunjucks@3.2.4_chokidar@3.3.1",
+      "nunjucks@3.2.4": "nunjucks@3.2.4",
       "pug": "pug@3.0.2",
       "sass": "sass@1.63.6"
     },
@@ -220,6 +222,10 @@
           "@babel/helper-validator-identifier": "@babel/helper-validator-identifier@7.22.5",
           "to-fast-properties": "to-fast-properties@2.0.0"
         }
+      },
+      "a-sync-waterfall@1.0.1": {
+        "integrity": "sha512-RYTOHHdWipFUliRFMCS4X2Yn2X8M87V/OpSqWzKKOGhzqyUxzyVmhHDH9sAvG+ZuQf/TAOFsLCpMw09I1ufUnA==",
+        "dependencies": {}
       },
       "acorn@7.4.1": {
         "integrity": "sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==",
@@ -269,6 +275,19 @@
           "is-regex": "is-regex@1.1.4"
         }
       },
+      "chokidar@3.3.1": {
+        "integrity": "sha512-4QYCEWOcK3OJrxwvyyAOxFuhpvOVCYkr33LPfFNBjAD/w3sEzWsp2BUOkI4l9bHvWioAd0rc6NlHUOEaWkTeqg==",
+        "dependencies": {
+          "anymatch": "anymatch@3.1.3",
+          "braces": "braces@3.0.2",
+          "fsevents": "fsevents@2.1.3",
+          "glob-parent": "glob-parent@5.1.2",
+          "is-binary-path": "is-binary-path@2.1.0",
+          "is-glob": "is-glob@4.0.3",
+          "normalize-path": "normalize-path@3.0.0",
+          "readdirp": "readdirp@3.3.0"
+        }
+      },
       "chokidar@3.5.3": {
         "integrity": "sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==",
         "dependencies": {
@@ -281,6 +300,10 @@
           "normalize-path": "normalize-path@3.0.0",
           "readdirp": "readdirp@3.6.0"
         }
+      },
+      "commander@5.1.0": {
+        "integrity": "sha512-P0CysNDQ7rtVw4QIQtm+MRxV66vKFSvlsQvGYXZWR3qFU0jlMKHZZZgw8e+8DSah4UDKMqnknRDQz+xuQXQ/Zg==",
+        "dependencies": {}
       },
       "constantinople@4.0.1": {
         "integrity": "sha512-vCrqcSIq4//Gx74TXXCGnHpulY1dskqLTFGDmhrGxzeXL8lF8kvXv6mpNWlJj1uD4DW23D4ljAqbY4RRaaUZIw==",
@@ -306,6 +329,10 @@
         "dependencies": {
           "to-regex-range": "to-regex-range@5.0.1"
         }
+      },
+      "fsevents@2.1.3": {
+        "integrity": "sha512-Auw9a4AxqWpa9GUfj370BMPzzyncfBABW8Mab7BGWBYDj4Isgq+cDKtx0i6u9jcX9pQDnswsaaOTgTmA5pEjuQ==",
+        "dependencies": {}
       },
       "fsevents@2.3.2": {
         "integrity": "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==",
@@ -459,6 +486,30 @@
         "integrity": "sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==",
         "dependencies": {}
       },
+      "nunjucks-async-loader@2.1.1_nunjucks@3.2.4_chokidar@3.3.1": {
+        "integrity": "sha512-39tK22e2kFDki+vg2PXuUJF3IVHKsJKCn2jHn8rAnSqAFf2jY1gGOaV5iaucNf1QiYYVdHyk7Y5oHNUBSvrWvA==",
+        "dependencies": {
+          "chokidar": "chokidar@3.3.1",
+          "nunjucks": "nunjucks@3.2.4_chokidar@3.3.1"
+        }
+      },
+      "nunjucks@3.2.4": {
+        "integrity": "sha512-26XRV6BhkgK0VOxfbU5cQI+ICFUtMLixv1noZn1tGU38kQH5A5nmmbk/O45xdyBhD1esk47nKrY0mvQpZIhRjQ==",
+        "dependencies": {
+          "a-sync-waterfall": "a-sync-waterfall@1.0.1",
+          "asap": "asap@2.0.6",
+          "commander": "commander@5.1.0"
+        }
+      },
+      "nunjucks@3.2.4_chokidar@3.3.1": {
+        "integrity": "sha512-26XRV6BhkgK0VOxfbU5cQI+ICFUtMLixv1noZn1tGU38kQH5A5nmmbk/O45xdyBhD1esk47nKrY0mvQpZIhRjQ==",
+        "dependencies": {
+          "a-sync-waterfall": "a-sync-waterfall@1.0.1",
+          "asap": "asap@2.0.6",
+          "chokidar": "chokidar@3.3.1",
+          "commander": "commander@5.1.0"
+        }
+      },
       "object-assign@4.1.1": {
         "integrity": "sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==",
         "dependencies": {}
@@ -566,6 +617,12 @@
           "pug-parser": "pug-parser@6.0.0",
           "pug-runtime": "pug-runtime@3.0.1",
           "pug-strip-comments": "pug-strip-comments@2.0.0"
+        }
+      },
+      "readdirp@3.3.0": {
+        "integrity": "sha512-zz0pAkSPOXXm1viEwygWIPSPkcBYjW1xU5j/JBh5t9bGCJwa6f9+BJa6VaB2g+b55yVrmXzqkyLf4xaWYM0IkQ==",
+        "dependencies": {
+          "picomatch": "picomatch@2.3.1"
         }
       },
       "readdirp@3.6.0": {

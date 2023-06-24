@@ -44,7 +44,7 @@ export enum LogLevel {
 const typeEmojiMap: Record<number, string> = {
   [LogType.DEBUG]: "🔧",
   [LogType.INFO]: "✅",
-  [LogType.WARN]: "⚠️",
+  [LogType.WARN]: "⚠️ ",
   [LogType.ERROR]: "❌",
   [LogType.FATAL]: "⛔"
 }

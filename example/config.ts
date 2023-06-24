@@ -1,5 +1,6 @@
 import type { Route, Sencha, SenchaOptions } from '../src/mod.ts';
 import * as plugins from '../src/plugins/mod.ts';
+import { delay } from '../src/utils/promise.ts';
 
 /** API options */
 export const config: SenchaOptions = {
@@ -39,8 +40,16 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
       }
     },
     plugins: [
-      plugins.eta(),
+      {
+        filters: {
+          richText: async (blocks: any[]) => {
+            return blocks.join('\n');
+          }
+        }
+      },
+      // plugins.eta(),
       plugins.pug(),
+      plugins.nunjucks(),
       plugins.esbuild(),
       plugins.sass(),
       plugins.postcss(),

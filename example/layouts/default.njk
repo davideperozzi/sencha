@@ -1,0 +1,11 @@
+<html>
+  <head>
+    <title>Sencha</title>
+
+    {{ sencha.style('styles/index.scss') | await | safe }}
+    {{ sencha.script('scripts/index.ts') | await | safe }}
+  </head>
+  <body>
+    {% block content %} 404 Not Found {% endblock %}
+  </body>
+</html>

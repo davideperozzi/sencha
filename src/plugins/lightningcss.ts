@@ -1,7 +1,7 @@
 import {
   CustomAtRules, transform, TransformOptions,
 } from 'npm:lightningcss@1.21.0';
-import { Buffer } from 'std/io/buffer.ts';
+import * as fs from 'std/fs/mod.ts';
 
 import { SenchaPlugin } from '../plugin.ts';
 import { fileRead } from '../utils/mod.ts';
@@ -14,14 +14,18 @@ export default (config: LightningcssPluginConfig = {}) => {
   return {
     hooks: {
       styleCompile: async (res) => {
-        const content = res.output || await fileRead(res.path);
-        const { code } = transform({
-          code: new TextEncoder().encode(content),
-          filename: res.path,
-          ...(config.transform || {})
-        });
+        if (await fs.exists(res.path)) {
+          const content = res.output || await fileRead(res.path);
+          const { code } = transform({
+            code: new TextEncoder().encode(content),
+            filename: res.path,
+            ...(config.transform || {})
+          });
 
-        return code.toString('utf8');
+          return code.toString('utf8');
+        } else {
+          throw new Error(`file not found: ${res.path}`);
+        }
       }
     }
   } as SenchaPlugin;
