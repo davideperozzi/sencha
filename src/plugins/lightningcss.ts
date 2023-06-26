@@ -4,27 +4,31 @@ import {
 import * as fs from 'std/fs/mod.ts';
 
 import { SenchaPlugin } from '../plugin.ts';
-import { fileRead } from '../utils/mod.ts';
+import { fileRead, fileWrite } from '../utils/mod.ts';
 
-export interface LightningcssPluginConfig<T extends CustomAtRules = any> {
-  transform?: Omit<TransformOptions<T>, 'filename' | 'code'>;
-}
+export interface LightningcssPluginConfig<T extends CustomAtRules = any> extends
+  Omit<TransformOptions<T>, 'filename' | 'code'> {}
 
 export default (config: LightningcssPluginConfig = {}) => {
   return {
     hooks: {
-      styleCompile: async (res) => {
-        if (await fs.exists(res.path)) {
-          const content = res.output || await fileRead(res.path);
-          const { code } = transform({
+      assetProcess: async (asset) => {
+        if (asset.is('css')) {
+          const content = await fileRead(asset.path);
+          const mapPath = `${asset.dest}.lightningcss.map`;
+          const { code, map } = transform({
             code: new TextEncoder().encode(content),
-            filename: res.path,
-            ...(config.transform || {})
+            filename: asset.path,
+            ...config
           });
 
-          return code.toString('utf8');
-        } else {
-          throw new Error(`file not found: ${res.path}`);
+          if (map) {
+            fileWrite(mapPath, JSON.stringify(new TextDecoder().decode(map)));
+          } else if (await fs.exists(mapPath)) {
+            await Deno.remove(mapPath);
+          }
+
+          return new TextDecoder().decode(code);
         }
       }
     }

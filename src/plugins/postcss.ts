@@ -11,13 +11,15 @@ export interface PostCSSPluginOptions {
 export default (config: PostCSSPluginOptions = {}) => {
   return {
     hooks: {
-      styleCompile: async (res) => {
-        const content = res.output || await fileRead(res.path);
-        const { css } = await postcss(config.plugins || []).process(content, {
-          from: undefined
-        });
+      assetProcess: async (asset) => {
+        if (asset.is('css')) {
+          const content = await fileRead(asset.path);
+          const { css } = await postcss(config.plugins || []).process(content, {
+            from: undefined
+          });
 
-        return css;
+          return css;
+        }
       }
     }
   } as SenchaPlugin;

@@ -1,8 +1,8 @@
 {% extends 'layouts/default.njk' %}
-{% from 'partials/image.njk' import image %}
+{% from 'includes/image.njk' import image %}
 
 {% block content %}
-  {% for isbn, book in sencha.fetch('https://openlibrary.org/api/books?bibkeys=ISBN%3A0201558025%2CLCCN%3A93005405&format=json') | await %}
+  {% for isbn, book in [] %}
     <b>{{ book.bib_key }}</b>
     {{ image(book.thumbnail_url) }}
 

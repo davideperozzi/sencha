@@ -2,7 +2,6 @@ import { HooksConfig } from './config.ts';
 import { OptPromise, optPromise } from './utils/mod.ts';
 
 export type SenchaPluginFilter = (...vars: any[]) => any;
-
 export interface SenchaPlugin {
   priority?: number;
   hooks?: HooksConfig;

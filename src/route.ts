@@ -2,6 +2,7 @@ import * as path from 'std/path/mod.ts';
 
 import { RouteConfig } from './config.ts';
 import { cleanUrl, optPromise, scanDir } from './utils/mod.ts';
+import * as fs from 'std/fs/mod.ts';
 
 export type RouteDataEntry = Promise<Record<string, any>> | Record<string, any>;
 export type RouteData = Record<
@@ -13,12 +14,12 @@ export type RouteParams = Record<
   string,
   ((route: Route) => RouteParamsEntry) | RouteParamsEntry
 >;
-export type RouteFilter = string[] | string | RegExp | RegExp[];
+export type RouteFilter = (string | RegExp)[] | string | RegExp;
 export interface Route {
   file: string;
   slug: string;
   view: string;
-  lang?: string;
+  lang: string;
   param: Record<string, any>;
   data: Record<string, any>;
 }
@@ -50,7 +51,7 @@ export function findRouteParams(slug: string, params?: RouteParams) {
     slug = cleanUrl(slug, false, false);
 
     const key = Object.keys(params)
-      .find(key => cleanUrl(key, false, false) == slug);
+      .find(key => cleanUrl(key, false, false) === slug);
 
     if (key) {
       return params[key];
@@ -73,11 +74,21 @@ export function filterRoutes(routes: Route[], filter: RouteFilter = /.*/) {
 
   if (typeof filter === 'string' || filter instanceof RegExp) {
     filters.push(filter);
+  } else {
+    filters.push(...filter);
   }
 
   return routes.filter(route => {
     for (const slugFilter of filters) {
       const routeSlug = cleanUrl(route.slug);
+
+      if (
+        typeof slugFilter === 'string' &&
+        fs.existsSync(slugFilter) &&
+        slugFilter === route.file
+      ) {
+        return true;
+      }
 
       if (
         (
@@ -104,35 +115,28 @@ export async function createRoutesFromFiles(
   const routes: Route[] = [];
   const viewFiles = await scanDir(folder);
 
-  for (const locale of locales) {
+  for (const lang of locales) {
     for (const file of viewFiles) {
       const relFile = path.relative(folder, file);
-      const viewFile = cleanUrl(relFile, false, false, true);
-      const params = await optPromise(findRouteParams(viewFile, config.params));
-      const slug = parseSlug(viewFile, config.pattern, {
-        locale: locale === locales[0] ? '' : locale
-      });
+      const view = cleanUrl(relFile, false, false, true);
+      const langSlug = lang === locales[0] ? '' : lang;
+      const slug = parseSlug(view, config.pattern, { locale: langSlug });
+      const route: Route = { lang, slug, file, view, param: {}, data: {} };
+      const params = await optPromise(
+        findRouteParams(view, config.params),
+        route
+      );
 
       if (params && params.length > 0) {
         for (const param of params) {
           routes.push({
-            file,
+            ...route,
             param,
-            data: {},
-            view: viewFile,
             slug: parseRouteParam(slug, param),
-            lang: locale,
           });
         }
       } else {
-        routes.push({
-          file,
-          slug,
-          data: {},
-          param: {},
-          view: viewFile,
-          lang: locale,
-        });
+        routes.push(route);
       }
     }
   }

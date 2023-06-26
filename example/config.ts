@@ -1,6 +1,5 @@
 import type { Route, Sencha, SenchaOptions } from '../src/mod.ts';
 import * as plugins from '../src/plugins/mod.ts';
-import { delay } from '../src/utils/promise.ts';
 
 /** API options */
 export const config: SenchaOptions = {
@@ -14,26 +13,29 @@ export const config: SenchaOptions = {
 
 /** General options */
 export default async (sencha: Sencha): Promise<SenchaOptions> => {
+  await null;
   // await sencha.health();
-  await sencha.fetch('cat:facts', { store: 'cat.facts', default: [] });
+  // await sencha.fetch('cat:facts', { store: 'cat.facts', default: [] });
 
   return {
     route: {
       params: {
-        'projects/[project]': [
-          { project: 'project-1' },
-          { project: 'project-2' },
-          { project: 'project-3' },
-          { project: 'project-4' },
-          { project: 'project-5' },
-          { project: 'project-6' },
-          { project: 'project-7' },
-          { project: 'project-8' },
-        ]
+        'projects/[project]': (route) => {
+          return [
+            { project: 'project-1' },
+            { project: 'project-2' },
+            { project: 'project-3' },
+            { project: 'project-4' },
+            { project: 'project-5' },
+            { project: 'project-6' },
+            { project: 'project-7' },
+            { project: 'project-8' },
+          ];
+        }
       },
       data: {
         '__': { 'title': 'Hello!' },
-        'projects/[project]': async (route: Route) => ({
+        'projects/[project]': (route: Route) => ({
           active: 1,
           name: route.param.project
         })
@@ -42,18 +44,16 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
     plugins: [
       {
         filters: {
-          richText: async (blocks: any[]) => {
-            return blocks.join('\n');
-          }
+          richText: (blocks: any[]) => blocks.join('\n')
         }
       },
-      // plugins.eta(),
+      plugins.sync({ from: './static' }),
       plugins.pug(),
       plugins.nunjucks(),
       plugins.esbuild(),
       plugins.sass(),
       plugins.postcss(),
-      plugins.lightningcss(),
+      // plugins.lightningcss({ minify: true }),
     ]
   }
 };

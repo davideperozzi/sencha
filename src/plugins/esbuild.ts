@@ -7,16 +7,19 @@ export interface EsbuildPluginConfig extends esbuild.BuildOptions {}
 export default (config: EsbuildPluginConfig = {}) => {
   return {
     hooks: {
-      scriptCompile: async (res) => {
-        await esbuild.build({
-          ...config,
-          entryPoints: [ res.path ],
-          outfile: res.dest,
-        });
+      assetProcess: async (asset) => {
+        if (asset.is(['ts', 'js']) && asset.isFirst()) {
+          await esbuild.build({
+            allowOverwrite: true,
+            ...config,
+            entryPoints: [ asset.path ],
+            outfile: asset.dest,
+          });
+        }
       },
       ...(config.entryPoints ? {
         buildSuccess: async () => {
-          await esbuild.build(config);
+          await esbuild.build(config)
         }
       } : {})
     }
