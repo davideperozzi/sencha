@@ -4,6 +4,10 @@ import * as path from 'std/path/mod.ts';
 export async function scanDir(dirPath: string): Promise<string[]> {
   const files: string[] = [];
 
+  if ( ! await fs.exists(dirPath)) {
+    return [];
+  }
+
   for await (const entry of Deno.readDir(dirPath)) {
     const entryPath = path.join(dirPath, entry.name);
 

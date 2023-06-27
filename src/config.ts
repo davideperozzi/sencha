@@ -12,6 +12,7 @@ declare global {
 }
 
 export interface BuildResult {
+  cache: boolean;
   timeMs: number;
   routes: Route[];
   assets: AssetFile[];
@@ -42,6 +43,10 @@ export interface HooksConfig {
   viewCompile?: OptPromise<(route: Route) => string | void>;
   viewParse?: OptPromise<(result: { route: Route, html: string }) => void>;
   viewRender?: OptPromise<(result: { route: Route, html: string }) => boolean>;
+  watcherChange?: OptPromise<(event: {
+    file: string;
+    type: Deno.FsEvent
+  }) => void>;
   globalsLoad?: OptPromise<(globals: {
     sencha: SenchaGlobals;
     [key: string]: any

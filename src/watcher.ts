@@ -38,7 +38,7 @@ export class Watcher {
           this.notifiers.delete(dataStr);
 
           if (this.events.includes(event.kind)) {
-            await this.build(event.paths);
+            await this.build(event.paths, event.kind);
           }
         }, 20)
       );
@@ -52,7 +52,7 @@ export class Watcher {
     }
   }
 
-  private async build(paths: string[] = []) {
+  private async build(paths: string[] = [], kind: Deno.FsEvent['kind']) {
     const views: RouteFilter = [];
     const assets = [];
     let needsRebuild = false;
@@ -61,6 +61,11 @@ export class Watcher {
       if (filePath.startsWith(this.sencha.outDir)) {
         continue;
       }
+
+      await this.sencha.pluginHook(
+        'watcherChange',
+        [{ kind, file: filePath }]
+      );
 
       if (
         filePath.startsWith(this.sencha.layoutsDir) ||

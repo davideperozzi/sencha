@@ -84,8 +84,13 @@ export class Sencha {
     this.fetcher.clear();
   }
 
+
   path(...paths: string[]) {
     return path.join(this.config.rootDir, ...paths);
+  }
+
+  outPath(...paths: string[]) {
+    return this.path(this.config.outDir, ...paths);
   }
 
   async health(exit = true) {
@@ -213,17 +218,22 @@ export class Sencha {
 
     buildResult.errors.push(...errors);
 
+    perfTime.start('doine');
+
     const timeMs = perfTime.end('build');
-    const result = { timeMs, assets, ...buildResult };
+    const result = { timeMs, assets, cache, ...buildResult };
     const failed = result.errors.length;
 
+    logger.debug('finalizing build and calling hooks');
     await this.pluginHook(failed ? 'buildFail' : 'buildSuccess', [result]);
     await this.pluginHook('buildDone', [result]);
+
+    result.timeMs += perfTime.end('doine');
 
     if (result.errors.length > 0) {
       this.logger.error(`build failed with ${result.errors.length} errors`);
     } else {
-      this.logger.info(`build done in ${timeMs}ms`);
+      this.logger.info(`build done in ${result.timeMs}ms`);
     }
 
     return result;

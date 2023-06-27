@@ -47,12 +47,13 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
           richText: (blocks: any[]) => blocks.join('\n')
         }
       },
-      plugins.sync({ from: './static' }),
+      plugins.sync('static'),
+      // plugins.sync('robots.txt'),
       plugins.pug(),
       plugins.nunjucks(),
       plugins.esbuild(),
       plugins.sass(),
-      plugins.postcss(),
+      // plugins.postcss(),
       // plugins.lightningcss({ minify: true }),
     ]
   }
