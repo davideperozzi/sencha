@@ -11,6 +11,7 @@ export default (config: EsbuildPluginConfig = {}) => {
         if (asset.is(['ts', 'js']) && asset.isFirst()) {
           await esbuild.build({
             allowOverwrite: true,
+            bundle: true,
             ...config,
             entryPoints: [ asset.path ],
             outfile: asset.dest,

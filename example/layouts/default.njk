@@ -6,6 +6,7 @@
     {{ sencha.script('scripts/index.ts') | await | safe }}
   </head>
   <body>
+    {% include '../includes/nav.njk' %}
     {% block content %} 404 Not Found {% endblock %}
   </body>
 </html>

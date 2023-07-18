@@ -5,28 +5,31 @@ import * as path from 'std/path/mod.ts';
 import { AssetFile, AssetProcessor } from './asset.ts';
 import { Builder } from './builder.ts';
 import {
-  BuildResult, HooksConfig, SenchaConfig, SenchaOptions,
+  BuildResult, HooksConfig, SenchaConfig, SenchaOptions, SenchaReloadConfig,
 } from './config.ts';
+import emitter from './emitter.ts';
 import { defaultConfig as fetcherDefaultConfig, Fetcher } from './fetcher.ts';
 import { healthCheck } from './health.ts';
 import logger from './logger/mod.ts';
 import { pluginHook, pluginHookSync, SenchaPlugin } from './plugin.ts';
+import livereload from './plugins/core/livereload.ts';
 import scriptPlugin from './plugins/core/script.ts';
 import stylePlugin from './plugins/core/style.ts';
 import {
   createRoutesFromFiles, filterRoutes, parseRouteData, RouteFilter,
 } from './route.ts';
 import store from './store.ts';
-import { measure } from './utils/mod.ts';
+import { isDevelopment, measure, optPromise } from './utils/mod.ts';
 
 const defaultConfig: SenchaConfig = {
   locale: 'en',
   outDir: 'dist',
   rootDir: Deno.cwd(),
   assetDir: '_',
-  cache: false,
   fetch: fetcherDefaultConfig,
   plugins: [],
+  cache: !isDevelopment(),
+  livereload: isDevelopment(),
   viewsDir: 'views',
   layoutsDir: 'layouts',
   includesDir: 'includes',
@@ -34,6 +37,14 @@ const defaultConfig: SenchaConfig = {
     pattern: '/:locale/:slug'
   },
 };
+
+export enum SenchaEvents {
+  BUILD_START = 'build:start',
+  BUILD_SUCCESS = 'build:success',
+  BUILD_FAIL = 'build:fail',
+  BUILD_DONE = 'build:done',
+  CONFIG_UPDATE = 'config:update',
+}
 
 export class Sencha {
   readonly logger = logger.child('sencha');
@@ -43,6 +54,7 @@ export class Sencha {
   private plugins: SenchaPlugin[] = [ ...this.corePlugins ];
   readonly assets = new AssetProcessor(this.rootDir, this.assetDir);
   readonly fetch = this.fetcher.fetch.bind(this.fetcher);
+  readonly emitter = emitter;
 
   constructor(config?: SenchaOptions) {
     if (config) {
@@ -80,10 +92,13 @@ export class Sencha {
     return store;
   }
 
+  get cacheEnabled()  {
+    return this.config.cache;
+  }
+
   clear() {
     this.fetcher.clear();
   }
-
 
   path(...paths: string[]) {
     return path.join(this.config.rootDir, ...paths);
@@ -117,9 +132,9 @@ export class Sencha {
     );
   }
 
-  async reload() {
-    const config = await import(this.rootDir + '/config.ts');
-    const partials = Object.values(config);
+  async load({ configFile = 'config.ts' }: SenchaReloadConfig = {}) {
+    const configModule = await import(this.path(configFile));
+    const partials = Object.values(configModule);
 
     for (const options of partials) {
       if (typeof options === 'object') {
@@ -144,43 +159,48 @@ export class Sencha {
     await this.pluginHook('configParse', [this.config]);
     this.fetcher.configure(this.config.fetch);
 
-    if (this.config.plugins) {
-      this.plugins = [
-        ...this.corePlugins,
-        ...this.config.plugins
-          .map((plugin) => {
-            if (typeof plugin === 'function') {
-              return plugin(this);
-            }
+    const plugins: SenchaPlugin[] = [ ...this.corePlugins ];
 
-            return plugin;
-          })
-          .sort((a, b) => (a.priority || 0) - (b.priority || 0))
-      ];
+    if (this.config.livereload) {
+      plugins.push(livereload(this));
     }
+
+    if (this.config.plugins) {
+      for (const plugin of this.config.plugins) {
+        if (typeof plugin === 'function') {
+          plugins.push(await optPromise(plugin, this));
+        } else {
+          plugins.push(plugin);
+        }
+      }
+
+      this.plugins = plugins;
+    }
+
+    this.emitter.emit(SenchaEvents.CONFIG_UPDATE, this.config);
   }
 
-  async processAssets(cache = false, assets?: AssetFile[]) {
+  async processAssets(cache = false, customAssets?: AssetFile[]) {
     const timeLog = measure(this.logger);
     const errors: any[] = [];
-    let files: AssetFile[] = [];
+    let assets: AssetFile[] = [];
 
     timeLog.start('assets');
 
     try {
-      files = await this.assets.process(
+      assets = await this.assets.process(
         async (asset) => await this.pluginHook('assetProcess', [asset]),
         cache,
-        assets
+        customAssets
       );
     } catch (err) {
       errors.push(err);
       this.logger.error(err);
     }
 
-    timeLog.end('assets', `${files.length} assets built in`);
+    timeLog.end('assets', `${assets.length} assets built in`);
 
-    return { files, errors };
+    return { assets, errors };
   }
 
   async build(
@@ -194,45 +214,57 @@ export class Sencha {
     const outDir = this.outDir;
     const builder = new Builder({ plugins, outDir, parallel: 500 });
     const perfTime = measure(this.logger);
-    const allRoutes = await this.createRoutes();
+    const allRoutes = await this.parseRoutes();
     const filteredRoutes = filterRoutes(allRoutes, filter);
+    const result: BuildResult = {
+      routes: filteredRoutes,
+      timeMs: 0,
+      cache: false,
+      assets: [],
+      errors: []
+    };
 
     perfTime.start('build');
+    this.emitter.emit(SenchaEvents.BUILD_START, result);
 
     await fs.ensureDir(outDir);
     await this.loadGlobals();
-    await this.pluginHook('buildStart', [{
-      routes: filteredRoutes,
-      timeMs: 0,
-      errors: []
-    }]);
+    await this.pluginHook('buildStart', [result]);
 
     perfTime.start('routes');
 
     const buildResult = await builder.build(filteredRoutes);
+
+    result.errors.push(...buildResult.errors);
     await builder.tidy(allRoutes);
 
-    perfTime.end('routes', `built routes`);
+    perfTime.end('routes', 'built routes');
 
-    const { errors, files: assets } = await this.processAssets(cache);
+    const assetResult = await this.processAssets(cache);
 
-    buildResult.errors.push(...errors);
+    result.assets = assetResult.assets;
+    result.errors.push(...assetResult.errors);
 
-    perfTime.start('doine');
+    perfTime.start('done');
 
     const timeMs = perfTime.end('build');
-    const result = { timeMs, assets, cache, ...buildResult };
-    const failed = result.errors.length;
+    const failed = result.errors.length > 0;
+
+    result.timeMs = timeMs;
 
     logger.debug('finalizing build and calling hooks');
     await this.pluginHook(failed ? 'buildFail' : 'buildSuccess', [result]);
     await this.pluginHook('buildDone', [result]);
 
-    result.timeMs += perfTime.end('doine');
+    result.timeMs += perfTime.end('done');
 
-    if (result.errors.length > 0) {
+    this.emitter.emit(SenchaEvents.BUILD_DONE, result);
+
+    if (failed) {
+      this.emitter.emit(SenchaEvents.BUILD_FAIL, result);
       this.logger.error(`build failed with ${result.errors.length} errors`);
     } else {
+      this.emitter.emit(SenchaEvents.BUILD_SUCCESS, result);
       this.logger.info(`build done in ${result.timeMs}ms`);
     }
 
@@ -265,13 +297,19 @@ export class Sencha {
     }
   }
 
-  private async createRoutes() {
+  async parseRoutes() {
     const { route, locale } = this.config;
     const locales = Array.isArray(locale) ? locale : [locale];
     const routes = await createRoutesFromFiles(this.viewsDir, route, locales);
 
     if (route.data) {
       await parseRouteData(routes, route.data);
+    }
+
+    for (const route of routes) {
+      route.out = route.url.endsWith('.html')
+        ? this.outPath(route.url)
+        : this.outPath(route.url, 'index.html');
     }
 
     return routes;

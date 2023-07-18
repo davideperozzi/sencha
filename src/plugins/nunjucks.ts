@@ -23,8 +23,12 @@ function createAsyncFilter(fn: any) {
 export default (config: NunjucksPluginConifg = {}) => {
   return (sencha: Sencha) => {
     const njkEnv = new nunjucks.Environment(
-      new nunjucks.FileSystemLoader(sencha.rootDir),
-      { ...config }
+      new nunjucks.FileSystemLoader(sencha.rootDir, {
+        noCache: typeof config.noCache !== 'undefined'
+          ? config.noCache
+          : !sencha.cacheEnabled
+      }),
+      { noCache: !sencha.cacheEnabled, ...config }
     );
 
     njkEnv.addFilter('await', createAsyncFilter(optPromise), true);
@@ -53,7 +57,9 @@ export default (config: NunjucksPluginConifg = {}) => {
             const template = await fileRead(route.file);
 
             return await new Promise((resolve, reject) => {
-              njkEnv.renderString(template, (err:any, res:any) => {
+              globalThis.sencha.route = route;
+
+              njkEnv.renderString(template, (err: any, res: any) => {
                 if (err) {
                   reject(err);
                 } else {

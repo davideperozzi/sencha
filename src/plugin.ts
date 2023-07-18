@@ -13,7 +13,8 @@ export async function pluginHook(
   args: any[] = [],
   plugins?: SenchaPlugin[],
   fallback?: OptPromise<(...args: any[]) => any>,
-  breakCb?: (result: any) => boolean
+  breakCb?: (result: any) => boolean,
+  callback?: OptPromise<(...args: any[]) => any>
 ) {
   let result;
 
@@ -22,6 +23,10 @@ export async function pluginHook(
       const hook = plugin.hooks?.[name] as any;
 
       if (hook && typeof hook === 'function') {
+        if (callback) {
+          await optPromise(callback(...args));
+        }
+
         const newResult = await optPromise(hook(...args));
 
         if (newResult) {

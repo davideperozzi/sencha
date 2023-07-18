@@ -8,15 +8,16 @@ export interface EtaPluginConfig {}
 
 export default (config: EtaPluginConfig = {}) => {
   return (sencha: Sencha) => {
-    const dir = sencha.path('templates');
-    const eta = new Eta({ views: dir });
+    const eta = new Eta({ ...config, views: sencha.viewsDir });
 
     return {
       hooks: {
         viewCompile: async (route) => {
           if (route.file.endsWith('.eta')) {
+            globalThis.sencha.route = route;
+
             return await eta.renderAsync(
-              path.relative(dir, route.file),
+              path.relative(sencha.viewsDir, route.file),
               {}
             );
           }

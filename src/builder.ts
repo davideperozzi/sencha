@@ -21,10 +21,6 @@ export class Builder {
     protected config: BuilderConfig
   ) {}
 
-  getOutFile(route: Route) {
-    return path.join(this.config.outDir, route.slug, 'index.html');
-  }
-
   async build(routes: Route[] = []) {
     const renderedRoutes: string[] = [];
     const errors: any[] = [];
@@ -51,7 +47,7 @@ export class Builder {
               'viewParse',
               [result],
               this.config.plugins,
-              async () => html,
+              () => html,
               (newResult) => {
                 result.html = newResult;
 
@@ -83,14 +79,20 @@ export class Builder {
   }
 
   async tidy(routes: Route[] = []) {
-    const files = routes.map((route) => this.getOutFile(route));
-    const pages = await scanHtml(this.config.outDir);
+    const { outDir } = this.config;
+    const files = routes.map((route) => route.out);
+    const pages = await scanHtml(outDir);
+    let removed = 0;
 
     for (const page of pages) {
       if ( ! files.includes(page)) {
         await Deno.remove(page);
-        this.logger.debug(`removed ${page}`);
+        removed++;
       }
+    }
+
+    if (removed > 0) {
+      this.logger.debug(`removed ${removed} routes`);
     }
 
     await cleanDir(this.config.outDir);
@@ -98,14 +100,14 @@ export class Builder {
 
   async render(result: RouteResult) {
     const { route, html } = result;
-    const outFile = path.join(this.config.outDir, route.slug, 'index.html');
-    const outDir = path.dirname(outFile);
 
-    await fs.ensureDir(outDir);
-    await fileWrite(outFile, html);
+    await fs.ensureDir(path.dirname(route.out));
+    await fileWrite(route.out, html);
   }
 
   async compile(route: Route): Promise<string> {
+    globalThis.sencha.route = route;
+
     return await fileRead(route.file);
   }
 }

@@ -18,6 +18,7 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
   // await sencha.fetch('cat:facts', { store: 'cat.facts', default: [] });
 
   return {
+    locale: ['en', 'de' ],
     route: {
       params: {
         'projects/[project]': (route) => {
@@ -47,14 +48,12 @@ export default async (sencha: Sencha): Promise<SenchaOptions> => {
           richText: (blocks: any[]) => blocks.join('\n')
         }
       },
-      plugins.sync('static'),
-      // plugins.sync('robots.txt'),
-      plugins.pug(),
+      // plugins.sync(['static', 'robots.txt']),
+      // plugins.pug(),
       plugins.nunjucks(),
       plugins.esbuild(),
       plugins.sass(),
-      // plugins.postcss(),
-      // plugins.lightningcss({ minify: true }),
+      plugins.minify()
     ]
   }
 };

@@ -15,14 +15,16 @@ export class Watcher {
     protected sencha: Sencha
   ) {}
 
-  async start() {
-    await this.sencha.reload();
-
+  async start(start?: () => void) {
     this.watcher = Deno.watchFs(this.sencha.rootDir, { recursive: true });
     this.state.result = await this.sencha.build();
 
     this.notifiers.clear();
     this.logger.info('watching ' + this.sencha.rootDir);
+
+    if (start) {
+      start();
+    }
 
     for await (const event of this.watcher) {
       const dataStr = JSON.stringify(event);

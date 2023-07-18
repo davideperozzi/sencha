@@ -1,3 +1,4 @@
+// @deno-types=npm:@types/pug
 import pug from 'npm:pug';
 
 import { SenchaPlugin } from '../plugin.ts';
@@ -27,6 +28,8 @@ export default (config: PugPluginConifg = {}) => {
         },
         viewCompile: (route) => {
           if (route.file.endsWith('.pug')) {
+            globalThis.sencha.route = route;
+
             return pug.renderFile(route.file, {
               basedir: sencha.rootDir,
               doctype: 'html',

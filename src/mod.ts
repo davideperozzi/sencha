@@ -6,4 +6,3 @@ export * from './plugin.ts';
 export * as plugins from './plugins/mod.ts';
 export * from './route.ts';
 export * from './sencha.ts';
-

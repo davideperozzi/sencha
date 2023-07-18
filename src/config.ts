@@ -22,13 +22,8 @@ export interface BuildResult {
 export interface SenchaGlobals {
   fetch: typeof Fetcher.prototype.fetch,
   store: typeof store;
+  route: Route;
   filters: Record<string, SenchaPluginFilter>;
-}
-
-export interface BuildResult {
-  timeMs: number;
-  routes: Route[];
-  errors: any[];
 }
 
 export type BuildHook = (result: BuildResult) => void;
@@ -55,6 +50,7 @@ export interface HooksConfig {
 
 export interface RouteConfig {
   pattern?: string;
+  pretty?: boolean;
   params?: RouteParams;
   data?: RouteData;
 }
@@ -72,7 +68,11 @@ export interface SenchaConfig {
   locale: string[] | string;
   fetch: FetchConfig;
   health?: (HealthCheck | string)[];
-  plugins?: (SenchaPlugin | ((sencha: any) => SenchaPlugin))[];
+  plugins?: (SenchaPlugin | OptPromise<((sencha: any) => SenchaPlugin)>)[];
+  livereload?: boolean;
   prettyUrls?: boolean;
 }
 
+export interface SenchaReloadConfig {
+  configFile?: string;
+}

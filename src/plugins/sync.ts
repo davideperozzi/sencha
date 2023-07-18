@@ -129,15 +129,27 @@ function parseConfig(configOrFrom: SyncPluginOptions | string) {
   return configOrFrom;
 }
 
-export default (configOrFrom: SyncPluginOptions | string) => {
+export default (configOrFrom: SyncPluginOptions | string | string[]) => {
   return (sencha: Sencha) => ({
     hooks: {
-      buildSuccess: async () => await sync(sencha, parseConfig(configOrFrom)),
-      watcherChange: async ({ file }) => await sync(
-        sencha,
-        parseConfig(configOrFrom),
-        [file]
-      ),
+      buildSuccess: async () => {
+        if (Array.isArray(configOrFrom)) {
+          for (const config of configOrFrom) {
+            await sync(sencha, parseConfig(config));
+          }
+        } else {
+          await sync(sencha, parseConfig(configOrFrom));
+        }
+      },
+      watcherChange: async ({ file }) => {
+        if (Array.isArray(configOrFrom)) {
+          for (const config of configOrFrom) {
+            await sync(sencha, parseConfig(config), [file]);
+          }
+        } else {
+          await sync(sencha, parseConfig(configOrFrom), [file]);
+        }
+      },
     }
   } as SenchaPlugin);
 };

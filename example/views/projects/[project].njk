@@ -1,0 +1,13 @@
+<h1>Project</h1>
+<p>
+  <b>Localized:</b><br>
+  {% for route in sencha.route.localized %}
+    <span>{{ route.lang + ': ' + route.slug }}</span><br>
+  {% endfor %}
+</p>
+<p>
+  <b>Siblings</b><br>
+  {% for route in sencha.route.siblings %}
+    <span>{{ route.lang + ': ' + route.slug }}</span><br>
+  {% endfor %}
+</p>

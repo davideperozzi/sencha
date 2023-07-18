@@ -1,8 +1,9 @@
+import * as fs from 'std/fs/mod.ts';
 import * as path from 'std/path/mod.ts';
 
 import { RouteConfig } from './config.ts';
+import { ArrayMap } from './utils/map.ts';
 import { cleanUrl, optPromise, scanDir } from './utils/mod.ts';
-import * as fs from 'std/fs/mod.ts';
 
 export type RouteDataEntry = Promise<Record<string, any>> | Record<string, any>;
 export type RouteData = Record<
@@ -16,12 +17,17 @@ export type RouteParams = Record<
 >;
 export type RouteFilter = (string | RegExp)[] | string | RegExp;
 export interface Route {
+  url: string;
   file: string;
   slug: string;
+  out: string;
   view: string;
   lang: string;
-  param: Record<string, any>;
   data: Record<string, any>;
+  param: Record<string, any>;
+  pretty: boolean;
+  siblings: Route[];
+  localized: Route[];
 }
 
 export interface RouteResult {
@@ -69,6 +75,10 @@ export function parseRouteParam(slug: string, param: Record<string, string>) {
   return cleanUrl(slug);
 }
 
+export function hasRouteParams(slug: string) {
+  return /\[.*?\]/.test(slug);
+}
+
 export function filterRoutes(routes: Route[], filter: RouteFilter = /.*/) {
   const filters: (string | RegExp)[] = [];
 
@@ -107,6 +117,37 @@ export function filterRoutes(routes: Route[], filter: RouteFilter = /.*/) {
   });
 }
 
+export function createRoute(
+  opts: Partial<Route> = {},
+  parent: Partial<Route> = {}
+) {
+  return {
+    url: '',
+    out: '',
+    lang: '',
+    slug: '',
+    file: '',
+    view: '',
+    param: {},
+    data: {},
+    siblings: [],
+    localized: [],
+    pretty: true,
+    ...parent,
+    ...opts
+  } as Route;
+}
+
+export function parseRoute(route: Route) {
+  const rootRoute = route.slug === '/';
+
+  route.url = route.pretty
+    ? route.slug
+    : (rootRoute ? '/index' : route.slug) + '.html';
+
+  return route;
+}
+
 export async function createRoutesFromFiles(
   folder: string,
   config: RouteConfig,
@@ -114,34 +155,58 @@ export async function createRoutesFromFiles(
 ) {
   const routes: Route[] = [];
   const viewFiles = await scanDir(folder);
+  const langGroups = new ArrayMap<string, Route>();
+  const paramGroups = new ArrayMap<string, Route>();
+  const { pattern, params: allParams, pretty = true } = config;
 
   for (const lang of locales) {
     for (const file of viewFiles) {
       const relFile = path.relative(folder, file);
       const view = cleanUrl(relFile, false, false, true);
       const langSlug = lang === locales[0] ? '' : lang;
-      const slug = parseSlug(view, config.pattern, { locale: langSlug });
-      const route: Route = { lang, slug, file, view, param: {}, data: {} };
-      const params = await optPromise(
-        findRouteParams(view, config.params),
-        route
-      );
+      const slugBase = parseSlug(view, pattern, { locale: '' });
+      const slug = parseSlug(view, pattern, { locale: langSlug });
+      const route = createRoute({ lang, slug, file, view, pretty });
 
-      if (params && params.length > 0) {
-        for (const param of params) {
-          routes.push({
-            ...route,
-            param,
-            slug: parseRouteParam(slug, param),
-          });
+      if (hasRouteParams(slug)) {
+        const params = await optPromise(
+          findRouteParams(view, allParams),
+          route
+        );
+
+        if (params && params.length > 0) {
+          for (const param of params) {
+            const slugBaseParam = parseRouteParam(slugBase, param);
+            const paramRoute = createRoute({
+              param,
+              slug: parseRouteParam(slug, param),
+            }, route);
+
+            routes.push(paramRoute);
+            langGroups.push(slugBaseParam, paramRoute);
+            paramGroups.push(slug, paramRoute);
+          }
         }
       } else {
         routes.push(route);
+        langGroups.push(slugBase, route);
       }
     }
   }
 
-  return routes;
+  for (const [_, group] of langGroups) {
+    for (const route of group) {
+      route.localized = group.filter(sib => sib !== route);
+    }
+  }
+
+  for (const [_, group] of paramGroups) {
+    for (const route of group) {
+      route.siblings = group.filter(sib => sib !== route);
+    }
+  }
+
+  return routes.map(route => parseRoute(route));
 }
 
 export async function parseRouteData(routes: Route[], data: RouteData) {
