@@ -1,7 +1,13 @@
 {
-  "importMap": "./imports.json",
+  "importMap": "./import_map.json",
   "tasks": {
-    "dev": "deno run --watch ./example/index.ts"
+    "compile": "deno compile --unstable --allow-read --allow-write --allow-net --allow-env --allow-run --import-map=import_map.json --target=x86_64-unknown-linux-gnu --output=bin/main mod.ts",
+    "test": "deno test -A --coverage=.coverage ./**/*_test.ts",
+    "test:cov": "deno task test && deno task cov:lcov && deno task cov:html",
+    "test:watch": "deno test --trace-ops -A --watch ./**/*_test.ts",
+    "cov:lcov": "deno coverage .coverage --lcov --output=.coverage/coverage.lcov",
+    "cov:html": "genhtml -o .coverage/html .coverage/coverage.lcov",
+    "cov:serve": "http-server -o -c-1 .coverage/html"
   },
   "lint": {
     "rules": {

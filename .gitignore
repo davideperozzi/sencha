@@ -10,6 +10,9 @@
 !.yarn/cache
 #.pnp.*
 
+
+.coverage
 .history
+bin
 node_modules
 dist
