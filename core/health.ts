@@ -43,7 +43,7 @@ async function waitForCheck(check: HealthCheck) {
     url,
     tries = 10,
     code = 200,
-    timeout: timeoutMs = 500,
+    timeout: timeoutMs = 800,
     delay: delayMs = 3000,
     method = 'GET'
   } = check;

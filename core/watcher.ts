@@ -1,7 +1,7 @@
 import * as path from "std/path/mod.ts";
 import logger from '#logger';
 import { RouteFilter } from './route.ts';
-import { Sencha } from './sencha.ts';
+import { Sencha, SenchaEvents } from './sencha.ts';
 import { BuildResult } from "./config.ts";
 
 export class Watcher {
@@ -13,18 +13,17 @@ export class Watcher {
 
   constructor(
     protected sencha: Sencha
-  ) {}
+  ) {
+    sencha.emitter.on(SenchaEvents.BUILD_SUCCESS, (result: BuildResult) => {
+      this.state.result = result;
+    });
+  }
 
-  async start(start?: () => void) {
+  async start() {
     this.watcher = Deno.watchFs(this.sencha.rootDir, { recursive: true });
-    this.state.result = await this.sencha.build();
 
     this.notifiers.clear();
     this.logger.info('watching ' + this.sencha.rootDir);
-
-    if (start) {
-      start();
-    }
 
     for await (const event of this.watcher) {
       const dataStr = JSON.stringify(event);
@@ -98,8 +97,7 @@ export class Watcher {
 
     if (needsRebuild) {
       await this.sencha.pluginHook('watcherRebuild', [paths]);
-
-      this.state.result = await this.sencha.build();
+      await this.sencha.build();
     } else if (views.length > 0) {
       await this.sencha.build(views);
     }

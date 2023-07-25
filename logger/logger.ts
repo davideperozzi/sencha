@@ -38,7 +38,7 @@ export enum LogLevel {
   SILENT = 0,
   ERROR = LogType.WARN | LogType.ERROR | LogType.FATAL,
   DEBUG = LogType.INFO | LogType.DEBUG | LogType.WARN | LogType.ERROR | LogType.TRACE | LogType.FATAL,
-  DEFAULT = LogType.INFO | LogType.WARN | LogType.ERROR | LogType.FATAL
+  INFO = LogType.INFO | LogType.WARN | LogType.ERROR | LogType.FATAL,
 }
 
 const typeEmojiMap: Record<number, string> = {

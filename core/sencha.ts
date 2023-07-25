@@ -154,7 +154,10 @@ export class Sencha {
     );
   }
 
-  async start({ configFile = 'config.ts' }: SenchaStartConfig = {}) {
+  async start(
+    { configFile = 'config.ts' }: SenchaStartConfig = {},
+    configOverride?: SenchaOptions
+  ) {
     if (this.started) {
       this.logger.warn('already started');
 
@@ -179,6 +182,10 @@ export class Sencha {
       if (typeof options === 'function') {
         await this.configure(await options(this));
       }
+    }
+
+    if (configOverride) {
+      this.configure(configOverride);
     }
 
     this.started = true;
@@ -322,7 +329,7 @@ export class Sencha {
 
     result.timeMs = timeMs;
 
-    logger.debug('finalizing build and calling hooks');
+    this.logger.debug('finalizing build and calling hooks');
     await this.pluginHook(failed ? 'buildFail' : 'buildSuccess', [result]);
     await this.pluginHook('buildDone', [result]);
 
