@@ -33,23 +33,22 @@ const reloadScript = /* js */`
 
     webSocket.addEventListener('message', (e) => {
       try {
-        const { files = [], rebuilt = false } = JSON.parse(e.data);
+        const { type, file, reload = false } = JSON.parse(e.data);
 
-        if ( ! Array.isArray(files)) {
-          console.error(
-            'Invalid data type from livereload server:',
-            typeof files
-          );
-
-          return;
+        if (reload) {
+          location.reload();
         }
 
-        /**
-         * @todo do all the style inject and image replace magic. Also try to
-         * restore the scroll position after the reload
-         */
-        if (rebuilt) {
-          location.reload();
+        if (type === 'asset') {
+          if (file.endsWith('.css')) {
+            const link = document.querySelector('link[href^="' + file + '"]');
+
+            if (link) {
+              link.href = file + '?t=' + Date.now();
+            }
+          } else {
+            location.reload();
+          }
         }
       } catch(err) {
         console.error('Invalid data from livereload server:', err);
@@ -79,14 +78,30 @@ export default (sencha: Sencha) => {
 
         for (const socket of sockets) {
           socket.send(JSON.stringify({
-            files: [file],
-            rebuilt: false
+            type: 'file',
+            reload: false,
+            file
           }));
+        }
+      },
+      assetProcess: (asset) => {
+        if ( ! asset.isFirst()) {
+          for (const socket of sockets) {
+            socket.send(JSON.stringify({
+              type: 'asset',
+              reload: false,
+              file: asset.url
+            }));
+          }
         }
       },
       buildSuccess: () => {
         for (const socket of sockets) {
-          socket.send(JSON.stringify({ rebuilt: true }));
+          socket.send(JSON.stringify({
+            type: 'build',
+            reload: true,
+            file: null,
+          }));
         }
       },
       serverUpgrade: (router) =>  {

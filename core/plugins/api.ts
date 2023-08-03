@@ -62,7 +62,7 @@ export default (config: ApiConfig) => (sencha: Sencha) => ({
           } catch(err) {
             response.body = JSON.stringify({
               success: false,
-              count: 0,
+              routes: [],
               timeMs: 0,
               errors: [err.toString()]
             });
@@ -75,7 +75,7 @@ export default (config: ApiConfig) => (sencha: Sencha) => ({
           response.status = result.errors.length > 0 ? 500 : 200;
           response.body = JSON.stringify({
             success: result.errors.length === 0,
-            count: result.routes.length,
+            routes: result.routes.map(route => route.url),
             timeMs: result.timeMs,
             errors: result.errors.map(error => error.toString())
           });

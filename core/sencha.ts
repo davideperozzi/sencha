@@ -7,14 +7,15 @@ import * as path from 'std/path/mod.ts';
 import { AssetFile, AssetProcessor } from './asset.ts';
 import { Builder } from './builder.ts';
 import {
-  BuildResult, HooksConfig, SenchaConfig, SenchaContext, SenchaOptions, SenchaStartConfig,
+  BuildResult, HooksConfig, SenchaConfig, SenchaContext, SenchaOptions,
+  SenchaStartConfig,
 } from './config.ts';
 import emitter from './emitter.ts';
 import { defaultConfig as fetcherDefaultConfig, Fetcher } from './fetcher.ts';
 import { healthCheck } from './health.ts';
 import { pluginHook, pluginHookSync, SenchaPlugin } from './plugin.ts';
-import livereloadPlugin from './plugins/livereload.ts';
 import apiPlugin from './plugins/api.ts';
+import livereloadPlugin from './plugins/livereload.ts';
 import scriptPlugin from './plugins/script.ts';
 import stylePlugin from './plugins/style.ts';
 import {
@@ -22,41 +23,43 @@ import {
 } from './route.ts';
 import store from './store.ts';
 
-const defaultConfig: SenchaConfig = {
-  locale: 'en',
-  outDir: 'dist',
-  rootDir: Deno.cwd(),
-  assetDir: '_',
-  fetch: fetcherDefaultConfig,
-  plugins: [],
-  exposeApi: true,
-  cache: !isDevelopment(),
-  livereload: isDevelopment(),
-  viewsDir: 'views',
-  layoutsDir: 'layouts',
-  includesDir: 'includes',
-  route: {
-    pattern: '/:locale/:slug'
-  },
-};
-
 export enum SenchaEvents {
   BUILD_START = 'build:start',
   BUILD_SUCCESS = 'build:success',
   BUILD_FAIL = 'build:fail',
   BUILD_DONE = 'build:done',
   CONFIG_UPDATE = 'config:update',
+  START = 'start',
 }
 
 export class Sencha {
   private started = false;
-  readonly logger = logger.child('sencha');
   private filters: Record<string, (...args: any[]) => any> = {};
-  private _state: any;
-  private config = defaultConfig;
+  private _state!: Deno.Kv;
+  private stateReady: Promise<void>;
+  private _configPath?: string;
   private fetcher = new Fetcher();
   private corePlugins = [scriptPlugin(this), stylePlugin(this)];
   private plugins: SenchaPlugin[] = [ ...this.corePlugins ];
+  private config: SenchaConfig = {
+    locale: 'en',
+    outDir: 'dist',
+    rootDir: Deno.cwd(),
+    assetDir: '_',
+    fetch: fetcherDefaultConfig,
+    plugins: [],
+    exposeApi: true,
+    cache: !isDevelopment(),
+    livereload: isDevelopment(),
+    viewsDir: 'views',
+    layoutsDir: 'layouts',
+    includesDir: 'includes',
+    route: {
+      pattern: '/:locale/:slug'
+    },
+  };
+  lastBuildResult?: BuildResult;
+  readonly logger = logger.child('sencha');
   readonly fetch = this.fetcher.fetch.bind(this.fetcher);
   readonly emitter = emitter;
   readonly assets = new AssetProcessor(
@@ -74,6 +77,17 @@ export class Sencha {
     if (config) {
       this.configure(config);
     }
+
+    const statePath = this.path('.sencha', 'state');
+
+    fs.ensureFileSync(statePath);
+
+    this.stateReady = new Promise((resolve, reject) => {
+      Deno.openKv(statePath).then((state) => {
+        this._state = state;
+        resolve();
+      });
+    });
 
     this.pluginHook('senchaInit');
   }
@@ -110,6 +124,10 @@ export class Sencha {
 
   get store() {
     return store;
+  }
+
+  get configPath() {
+    return this._configPath ?? this.path('config.ts');
   }
 
   get cacheEnabled()  {
@@ -164,13 +182,9 @@ export class Sencha {
       return this;
     }
 
-    const statePath = this.path('.sencha', 'state');
-    const configModule = await import(this.path(configFile));
+    this._configPath = this.path(configFile);
+    const configModule = await import(this._configPath);
     const partials = Object.values(configModule);
-
-    await fs.ensureFile(statePath);
-
-    this._state = await (Deno as any).openKv(statePath);
 
     for (const options of partials) {
       if (typeof options === 'object') {
@@ -189,6 +203,8 @@ export class Sencha {
     }
 
     this.started = true;
+
+    this.emitter.emit(SenchaEvents.START);
 
     return this;
   }
@@ -262,6 +278,8 @@ export class Sencha {
   }
 
   async state(key: string[], value?: any) {
+    await this.stateReady;
+
     if (value !== undefined) {
       this._state.set(key, value);
 
@@ -336,6 +354,7 @@ export class Sencha {
     result.timeMs += perfTime.end('done');
 
     this.emitter.emit(SenchaEvents.BUILD_DONE, result);
+    this.lastBuildResult = result;
 
     if (failed) {
       this.emitter.emit(SenchaEvents.BUILD_FAIL, result);

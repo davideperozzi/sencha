@@ -3,9 +3,10 @@ import './config.ts';
 import logger from '#logger';
 import { OptPromise } from '#utils';
 import {
-  Application, Context, Next, Request, Router, Status,
+  Application, Context, Next, Request, Router, Status, send,
 } from 'oak/mod.ts';
 import * as fs from 'std/fs/mod.ts';
+import * as path from 'std/path/mod.ts';
 
 import { Route } from './route.ts';
 import { Sencha, SenchaEvents } from './sencha.ts';
@@ -68,6 +69,7 @@ const removeTrailingSlash = async (ctx: Context, next: Next) => {
 export class Server {
   private app = new Application();
   private dynamicRouter = new Router();
+  private abortController = new AbortController();
   private staticRouter = new Router();
   private logger = logger.child('server');
 
@@ -75,7 +77,8 @@ export class Server {
     private sencha: Sencha,
     private config: ServerConfig = {}
   ) {
-    this.init();
+    this.restore();
+    this.sencha.emitter.on(SenchaEvents.START, () => this.init());
   }
 
   private async init() {
@@ -85,13 +88,13 @@ export class Server {
     );
 
     await this.sencha.pluginHook('serverInit', [this.staticRouter]);
-    await this.restore();
   }
 
   private async restore() {
     const routes = await this.sencha.state(['server', 'routes']);
 
     if (routes) {
+      this.logger.debug(`restored ${routes.length} routes`);
       await this.update(routes);
     }
   }
@@ -165,10 +168,39 @@ export class Server {
       return dispatch(context, next);
     });
 
-    const hostname = this.config.host || '0.0.0.0';
     const port = this.config.port || 8374;
+    const hostname = this.config.host || '0.0.0.0';
+    const assetPath = this.sencha.assetDir;
+    const assetUrl = `/${path.relative(this.sencha.outDir, assetPath)}`;
+
+    this.app.use(async (ctx, next) => {
+      const pathname = ctx.request.url.pathname;
+
+      if ( ! pathname.startsWith(assetUrl)) {
+        next();
+        return;
+      }
+
+      const fileUrl = pathname.replace(assetUrl, '');
+      const filePath = path.join(assetPath, fileUrl);
+
+      if ( ! await fs.exists(filePath)) {
+        next();
+        return;
+      }
+
+      await send(ctx, fileUrl, { root: assetPath });
+    });
 
     this.logger.info(`Listening on http://${hostname}:${port}`)
-    await this.app.listen({ hostname, port });
+    await this.app.listen({
+      hostname,
+      port,
+      signal: this.abortController.signal
+    });
+  }
+
+  stop() {
+    this.abortController.abort();
   }
 }

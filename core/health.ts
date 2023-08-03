@@ -1,5 +1,5 @@
 import { default as defaultLogger } from '#logger';
-import { delay } from '#utils';
+import { delay, measure } from '#utils';
 
 export interface HealthCheck {
   url: string;
@@ -16,6 +16,8 @@ export async function healthCheck(
   checks: (HealthCheck | string)[],
   exit = true
 ) {
+  const start = performance.now();
+
   logger.debug(`check started`);
 
   for (const check of checks) {
@@ -33,7 +35,7 @@ export async function healthCheck(
     }
   }
 
-  logger.debug(`check passed`);
+  logger.debug(`check passed in ${(performance.now() - start).toFixed(2)}ms`);
 
   return true;
 }
@@ -50,11 +52,13 @@ async function waitForCheck(check: HealthCheck) {
 
   for (let i = 0; i < tries; i++) {
     try {
+      const start = performance.now();
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), timeoutMs);
       const response = await fetch(url, { method, signal: controller.signal });
+      const timeMs = (performance.now() - start).toFixed(2);
 
-      logger.debug(`check ${url} (${response.status})`);
+      logger.debug(`check ${url} (${response.status}) in ${timeMs}ms`);
 
       clearTimeout(timeout);
 
