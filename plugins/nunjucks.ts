@@ -1,7 +1,7 @@
 import { Sencha, SenchaPlugin } from '../core/mod.ts';
 import { fileRead, optPromise } from '../utils/mod.ts'
 
-// @deno-types=npm:@types/nunjucks
+// @deno-types="npm:@types/nunjucks@3.2.3"
 import nunjucks from 'npm:nunjucks@3.2.4';
 
 export interface NunjucksPluginConifg extends nunjucks.ConfigureOptions {}

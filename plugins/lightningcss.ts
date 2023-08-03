@@ -1,6 +1,6 @@
 import {
   CustomAtRules, transform, TransformOptions,
-} from 'npm:lightningcss@1.21.0';
+} from 'npm:lightningcss@1.21.5';
 
 import { SenchaPlugin } from '../core/mod.ts';
 import { fs } from '../deps/std.ts';

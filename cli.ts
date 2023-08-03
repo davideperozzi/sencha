@@ -6,7 +6,8 @@ while (true) {
       'run',
       '-A',
       '-q',
-      '--unstable', import.meta.resolve('./cli/command.ts'),
+      '--unstable',
+      import.meta.resolve('./cli/command.ts'),
       ...Deno.args
     ]
   });
