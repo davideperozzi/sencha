@@ -1,5 +1,4 @@
-import path from 'https://deno.land/std@0.109.0/node/path.ts';
-import { assertEquals, assertNotEquals } from 'std/testing/asserts.ts';
+import { assertEquals, assertNotEquals, path } from '../deps/std.ts';
 
 import {
   createRoutesFromFiles, filterRoutes, findRouteParams, hasRouteParams, parseRouteParam,

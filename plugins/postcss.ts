@@ -1,8 +1,8 @@
 import { Plugin } from 'https://deno.land/x/postcss@8.4.16/lib/postcss.d.ts';
 import postcss from 'https://deno.land/x/postcss@8.4.16/mod.js';
 
-import { SenchaPlugin } from '#core';
-import { fileRead } from '#utils';
+import { SenchaPlugin } from '../core/mod.ts';
+import { fileRead } from '../utils/mod.ts';
 
 export interface PostCSSPluginOptions {
   plugins?: Plugin[];

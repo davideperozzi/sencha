@@ -1,6 +1,4 @@
-import { assertEquals } from 'https://deno.land/std@0.194.0/testing/asserts.ts';
-import { Server } from 'std/http/server.ts';
-
+import { Server, assertEquals } from '../deps/std.ts';
 import { healthCheck } from './health.ts';
 
 const host = 'localhost';

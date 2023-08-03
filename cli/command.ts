@@ -1,8 +1,7 @@
-import { Sencha, Server, Watcher, WatcherEvents } from '#core';
-import logger, { LogLevel } from '#logger';
 import { Command } from 'https://deno.land/x/cliffy@v1.0.0-rc.2/command/mod.ts';
 
-import { isDevelopment } from '../utils/env.ts';
+import { Sencha, Server, Watcher, WatcherEvents } from '../core/mod.ts';
+import logger, { LogLevel } from '../logger/mod.ts';
 
 function getVersion() {
   const { pathname } = new URL(import.meta.resolve('../'));
@@ -166,3 +165,5 @@ try {
   cliLogger.error(error);
   Deno.exit(1);
 }
+
+Deno.exit(0);

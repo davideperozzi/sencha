@@ -1,8 +1,6 @@
-import * as fs from 'std/fs/mod.ts';
-import * as path from 'std/path/mod.ts';
-
-import { Sencha, SenchaPlugin } from '#core';
-import { scanDir } from '#utils';
+import { fs, path } from '../deps/std.ts';
+import { Sencha, SenchaPlugin } from '../core/mod.ts';
+import { scanDir } from '../utils/mod.ts';
 
 export interface SyncPluginOptions {
   from: string;

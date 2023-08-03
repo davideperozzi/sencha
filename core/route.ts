@@ -1,7 +1,5 @@
-import { ArrayMap, cleanUrl, optPromise, scanDir } from '#utils';
-import * as fs from 'std/fs/mod.ts';
-import * as path from 'std/path/mod.ts';
-
+import { fs, path } from '../deps/std.ts';
+import { ArrayMap, cleanUrl, optPromise, scanDir } from '../utils/mod.ts';
 import { RouteConfig } from './config.ts';
 
 export type RouteDataEntry = Promise<Record<string, any>> | Record<string, any>;

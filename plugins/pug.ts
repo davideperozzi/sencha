@@ -1,4 +1,4 @@
-import { Sencha, SenchaPlugin } from '#core';
+import { Sencha, SenchaPlugin } from '../core/mod.ts';
 // @deno-types=npm:@types/pug
 import pug from 'npm:pug';
 

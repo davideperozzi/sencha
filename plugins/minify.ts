@@ -4,8 +4,8 @@ import {
 // @deno-types=npm:@types/html-minifier
 import { minify, Options } from 'npm:html-minifier';
 
-import { Sencha, SenchaPlugin } from '#core';
-import { measure } from '#utils';
+import { Sencha, SenchaPlugin } from '../core/mod.ts';
+import { measure } from '../utils/mod.ts';
 
 export interface MinifypluginConfig extends Options {
   useWasm?: boolean;

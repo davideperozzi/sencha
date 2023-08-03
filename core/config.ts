@@ -1,5 +1,4 @@
-import { OptPromise } from '#utils';
-
+import { OptPromise } from '../utils/mod.ts';
 import { AssetFile } from './asset.ts';
 import { FetchConfig, Fetcher } from './fetcher.ts';
 import { HealthCheck } from './health.ts';

@@ -1,11 +1,11 @@
-import logger from '#logger';
-import * as path from 'std/path/mod.ts';
+import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
 
+import { path } from '../deps/std.ts';
+import logger from '../logger/mod.ts';
+import { AssetFile } from './asset.ts';
 import { BuildResult } from './config.ts';
 import { RouteFilter } from './route.ts';
 import { Sencha, SenchaEvents } from './sencha.ts';
-import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
-import { AssetFile } from './asset.ts';
 
 export enum WatcherEvents {
   NEEDS_RELOAD = 'needsreload'

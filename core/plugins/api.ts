@@ -1,10 +1,9 @@
 import '../config.ts';
 
-import { Context, Router, RouteParams } from 'oak/mod.ts';
-
+import { Router } from '../../deps/oak.ts';
+import { safeCompare } from '../../utils/security.ts';
 import { SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
-import { safeCompare } from '../../utils/security.ts';
 
 export interface ApiConfig {
   prefix?: string;

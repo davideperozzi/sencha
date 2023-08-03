@@ -1,5 +1,4 @@
-import * as fs from 'std/fs/mod.ts';
-import * as path from 'std/path/mod.ts';
+import { fs, path } from '../deps/std.ts';
 
 export async function scanDir(dirPath: string): Promise<string[]> {
   const files: string[] = [];

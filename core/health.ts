@@ -1,5 +1,4 @@
-import { default as defaultLogger } from '#logger';
-import { delay, measure } from '#utils';
+import { default as defaultLogger } from '../logger/mod.ts';
 
 export interface HealthCheck {
   url: string;

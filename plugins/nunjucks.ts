@@ -1,8 +1,5 @@
-import { Sencha, SenchaPlugin } from '#core';
-import { fileRead, optPromise } from '#utils'
-;
-// @deno-types="https://cdn.jsdelivr.net/gh/i18next/i18next/index.d.ts"
-import i18n, { InitOptions } from 'https://deno.land/x/i18next/index.js';
+import { Sencha, SenchaPlugin } from '../core/mod.ts';
+import { fileRead, optPromise } from '../utils/mod.ts'
 
 // @deno-types=npm:@types/nunjucks
 import nunjucks from 'npm:nunjucks@3.2.4';

@@ -1,6 +1,6 @@
 import '../core/config.ts';
 
-import { Sencha, SenchaPlugin } from '#core';
+import { Sencha, SenchaPlugin } from '../core/mod.ts';
 // @deno-types="https://cdn.jsdelivr.net/gh/i18next/i18next/index.d.ts"
 import i18next, {
   InitOptions, TFunction,

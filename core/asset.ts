@@ -1,7 +1,6 @@
-import logger from '#logger';
-import { cleanUrl, fileWrite } from '#utils';
-import * as fs from 'std/fs/mod.ts';
-import * as path from 'std/path/mod.ts';
+import { fs, path } from '../deps/std.ts';
+import logger from '../logger/mod.ts';
+import { cleanUrl, fileWrite } from '../utils/mod.ts';
 
 export class AssetFile {
   /**

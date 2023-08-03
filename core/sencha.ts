@@ -1,9 +1,6 @@
-import logger from '#logger';
-import { isDevelopment, measure, optPromise } from '#utils';
-import { deepMerge } from 'std/collections/deep_merge.ts';
-import * as fs from 'std/fs/mod.ts';
-import * as path from 'std/path/mod.ts';
-
+import { deepMerge, fs, path } from '../deps/std.ts';
+import logger from '../logger/mod.ts';
+import { isDevelopment, measure, optPromise } from '../utils/mod.ts';
 import { AssetFile, AssetProcessor } from './asset.ts';
 import { Builder } from './builder.ts';
 import {
@@ -86,7 +83,7 @@ export class Sencha {
       Deno.openKv(statePath).then((state) => {
         this._state = state;
         resolve();
-      });
+      }).catch(reject);
     });
 
     this.pluginHook('senchaInit');

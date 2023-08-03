@@ -1,16 +1,12 @@
-import './config.ts';
-
-import logger from '#logger';
-import { OptPromise } from '#utils';
 import {
-  Application, Context, Next, Request, Router, Status, send,
-} from 'oak/mod.ts';
-import * as fs from 'std/fs/mod.ts';
-import * as path from 'std/path/mod.ts';
-
+  Application, Context, Next, Request, Router, send, Status,
+} from '../deps/oak.ts';
+import { fs, path } from '../deps/std.ts';
+import logger from '../logger/mod.ts';
+import { OptPromise } from '../utils/mod.ts';
+import { BuildResult } from './config.ts';
 import { Route } from './route.ts';
 import { Sencha, SenchaEvents } from './sencha.ts';
-import { BuildResult } from './config.ts';
 
 declare module './config.ts' {
   export interface HooksConfig {

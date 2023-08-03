@@ -1,12 +1,10 @@
-import './config.ts';
-
-import logger from '#logger';
-import { batchPromise, cleanDir, fileRead, fileWrite, scanHtml } from '#utils';
-import * as fs from 'std/fs/mod.ts';
-import * as path from 'std/path/mod.ts';
-
+import { fs, path } from '../deps/std.ts';
+import logger from '../logger/mod.ts';
+import {
+  batchPromise, cleanDir, fileRead, fileWrite, scanHtml,
+} from '../utils/mod.ts';
 import { RouteContext, SenchaContext } from './config.ts';
-import { pluginHook, SenchaPlugin } from './plugin.ts';
+import { SenchaPlugin, pluginHook } from './plugin.ts';
 import { Route, RouteResult } from './route.ts';
 
 declare module './config.ts' {

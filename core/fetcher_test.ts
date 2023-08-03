@@ -1,9 +1,6 @@
-
-import { Handler, Server } from 'std/http/server.ts';
 import {
-  assert, assertEquals, assertFalse, assertObjectMatch,
-} from 'std/testing/asserts.ts';
-
+  assert, assertEquals, assertFalse, assertObjectMatch, Handler, Server,
+} from '../deps/std.ts';
 import { Fetcher } from './fetcher.ts';
 import store from './store.ts';
 

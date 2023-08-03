@@ -1,6 +1,6 @@
 import * as esbuild from 'https://deno.land/x/esbuild@v0.18.5/mod.js';
 
-import { SenchaPlugin } from '#core';
+import { SenchaPlugin } from '../core/mod.ts';
 
 export interface EsbuildPluginConfig extends esbuild.BuildOptions {}
 
