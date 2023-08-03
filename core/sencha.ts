@@ -188,6 +188,8 @@ export class Sencha {
 
     const currentSrcDir = path.dirname(import.meta.url.replace('file://', ''));
     const configRelPath = path.relative(currentSrcDir, this._configPath);
+    console.log(configRelPath, currentSrcDir, import.meta.url);
+    console.log(!configRelPath.startsWith('.') ? './' + configRelPath : configRelPath);
     const configModule = await import(
       !configRelPath.startsWith('.') ? './' + configRelPath : configRelPath
     );
