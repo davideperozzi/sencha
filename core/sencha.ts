@@ -188,7 +188,9 @@ export class Sencha {
 
     const currentSrcDir = path.dirname(import.meta.url.replace('file://', ''));
     const configRelPath = path.relative(currentSrcDir, this._configPath);
-    const configModule = await import(configRelPath);
+    const configModule = await import(
+      !configRelPath.startsWith('.') ? './' + configRelPath : configRelPath
+    );
     const partials = Object.values(configModule);
 
     for (const options of partials) {
