@@ -1,6 +1,8 @@
 import { deepMerge, fs, path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
-import { isDevelopment, measure, optPromise } from '../utils/mod.ts';
+import {
+  isDevelopment, measure, OptPromise, optPromise,
+} from '../utils/mod.ts';
 import { AssetFile, AssetProcessor } from './asset.ts';
 import { Builder } from './builder.ts';
 import {
@@ -37,6 +39,9 @@ export class Sencha {
   private _configPath?: string;
   private fetcher = new Fetcher();
   private corePlugins = [scriptPlugin(this), stylePlugin(this)];
+  private loadedPlugins: (
+    SenchaPlugin | OptPromise<(sencha: any) => SenchaPlugin>
+  )[] = [];
   private plugins: SenchaPlugin[] = [ ...this.corePlugins ];
   private config: SenchaConfig = {
     locale: 'en',
@@ -226,10 +231,14 @@ export class Sencha {
 
     if (this.config.plugins) {
       for (const plugin of this.config.plugins) {
-        if (typeof plugin === 'function') {
-          plugins.push(await optPromise(plugin, this));
-        } else {
-          plugins.push(plugin);
+        if ( ! this.loadedPlugins.includes(plugin)) {
+          if (typeof plugin === 'function') {
+            plugins.push(await optPromise(plugin, this));
+          } else if (plugin) {
+            plugins.push(plugin);
+          }
+
+          this.loadedPlugins.push(plugin);
         }
       }
 
