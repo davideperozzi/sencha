@@ -28,5 +28,5 @@ export async function optPromise<T>(value: any | Promise<T>, ...args: any[]) {
     value = value(...args);
   }
 
-  return value instanceof Promise ? await value : value;
+  return value instanceof Promise ? await value as T : value as T;
 }

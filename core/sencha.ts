@@ -39,9 +39,7 @@ export class Sencha {
   private _configPath?: string;
   private fetcher = new Fetcher();
   private corePlugins = [scriptPlugin(this), stylePlugin(this)];
-  private loadedPlugins: (
-    SenchaPlugin | OptPromise<(sencha: any) => SenchaPlugin>
-  )[] = [];
+  private loadedPlugins = new Map<(SenchaPlugin | OptPromise<(sencha: any) => SenchaPlugin>), SenchaPlugin>();
   private plugins: SenchaPlugin[] = [ ...this.corePlugins ];
   private config: SenchaConfig = {
     locale: 'en',
@@ -231,14 +229,13 @@ export class Sencha {
 
     if (this.config.plugins) {
       for (const plugin of this.config.plugins) {
-        if ( ! this.loadedPlugins.includes(plugin)) {
-          if (typeof plugin === 'function') {
-            plugins.push(await optPromise(plugin, this));
-          } else if (plugin) {
-            plugins.push(plugin);
-          }
+        if ( ! this.loadedPlugins.has(plugin)) {
+          const result = await optPromise<SenchaPlugin>(plugin, this);
 
-          this.loadedPlugins.push(plugin);
+          plugins.push(result);
+          this.loadedPlugins.set(plugin, result);
+        } else {
+          plugins.push(this.loadedPlugins.get(plugin)!);
         }
       }
 
