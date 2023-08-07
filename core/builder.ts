@@ -99,7 +99,7 @@ export class Builder {
     let removed = 0;
 
     for (const page of pages) {
-      if ( ! files.includes(page)) {
+      if ( ! files.includes(page) && await fs.exists(page)) {
         await Deno.remove(page);
         removed++;
       }
