@@ -641,6 +641,7 @@
       "i18n": "i18n@0.15.1",
       "i18next": "i18next@23.2.11",
       "i18next-fs-backend": "i18next-fs-backend@2.1.5",
+      "is-number": "is-number@7.0.0",
       "lightningcss@1.21.0": "lightningcss@1.21.0",
       "lightningcss@1.21.5": "lightningcss@1.21.5",
       "nunjucks-async-loader@2.1.1": "nunjucks-async-loader@2.1.1_nunjucks@3.2.4_chokidar@3.3.1",

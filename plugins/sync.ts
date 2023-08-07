@@ -75,21 +75,22 @@ async function sync(
     fromFiles = statFrom.isDirectory ? await scanDir(from) : [from];
   }
 
-  allFromFiles = allFromFiles.map(file => path.relative(sencha.rootDir, file));
-  fromFiles = fromFiles.map(file => path.relative(sencha.rootDir, file));
-  toFiles = toFiles.map(file => path.relative(sencha.outDir, file));
+  fromFiles = fromFiles.map(file => path.relative(from, file));
+  allFromFiles = allFromFiles.map(file => path.relative(from, file));
+  toFiles = toFiles.map(file => path.relative(to, file));
 
   if ( ! await fs.exists(from) && ! await fs.exists(to)) {
     logger.warn(`from "${from}" does not exist`);
   }
 
   for (const file of fromFiles) {
-    const toFile = path.join(path.dirname(relTo), file);
+    const fromFile = path.join(from, file);
+    const toFile = path.join(to, file);
 
     await fs.ensureDir(path.dirname(toFile));
 
-    if (await fs.exists(file)) {
-      await Deno.copyFile(file, toFile);
+    if (await fs.exists(fromFile)) {
+      await Deno.copyFile(fromFile, toFile);
     }
 
     copies++;
@@ -97,10 +98,10 @@ async function sync(
 
   for (const file of toFiles) {
     if ( ! allFromFiles.includes(file)) {
-      const toFile = path.join(sencha.outDir, file);
+      const toFile = path.join(to, file);
 
       if (await fs.exists(toFile)) {
-        await Deno.remove(path.join(sencha.outDir, file));
+        await Deno.remove(path.join(to, file));
       }
 
       removes++;
@@ -127,26 +128,22 @@ function parseConfig(configOrFrom: SyncPluginOptions | string) {
 }
 
 export default (configOrFrom: SyncPluginOptions | string | string[]) => {
-  return (sencha: Sencha) => ({
-    hooks: {
-      buildSuccess: async () => {
-        if (Array.isArray(configOrFrom)) {
-          for (const config of configOrFrom) {
-            await sync(sencha, parseConfig(config));
-          }
-        } else {
-          await sync(sencha, parseConfig(configOrFrom));
+  return (sencha: Sencha) => {
+    async function syncFiles(files: string[] = []) {
+      if (Array.isArray(configOrFrom)) {
+        for (const config of configOrFrom) {
+          await sync(sencha, parseConfig(config), files);
         }
-      },
-      watcherChange: async ({ file }) => {
-        if (Array.isArray(configOrFrom)) {
-          for (const config of configOrFrom) {
-            await sync(sencha, parseConfig(config), [file]);
-          }
-        } else {
-          await sync(sencha, parseConfig(configOrFrom), [file]);
-        }
-      },
+      } else {
+        await sync(sencha, parseConfig(configOrFrom), files);
+      }
     }
-  } as SenchaPlugin);
+
+    return {
+      hooks: {
+        buildSuccess: async () => await syncFiles(),
+        watcherChange: async ({ file }) => await syncFiles([file]),
+      }
+    } as SenchaPlugin;
+  };
 };
