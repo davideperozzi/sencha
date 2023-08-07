@@ -100,7 +100,12 @@ export class Builder {
 
     for (const page of pages) {
       if ( ! files.includes(page) && await fs.exists(page)) {
-        await Deno.remove(page);
+        try {
+          await Deno.remove(page);
+        } catch(err) {
+          this.logger.warn(`failed to remove "${page}": ` + err);
+        }
+
         removed++;
       }
     }

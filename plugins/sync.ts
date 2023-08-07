@@ -101,7 +101,11 @@ async function sync(
       const toFile = path.join(to, file);
 
       if (await fs.exists(toFile)) {
-        await Deno.remove(path.join(to, file));
+        try {
+          await Deno.remove(path.join(to, file));
+        } catch(err) {
+          logger.error(`failed to remove "${toFile}": ` + err);
+        }
       }
 
       removes++;
