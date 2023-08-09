@@ -104,7 +104,7 @@ async function sync(
         try {
           await Deno.remove(path.join(to, file));
         } catch(err) {
-          logger.error(`failed to remove "${toFile}": ` + err);
+          logger.warn(`failed to remove "${toFile}": ` + err);
         }
       }
 
