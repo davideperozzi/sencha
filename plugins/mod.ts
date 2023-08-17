@@ -9,3 +9,4 @@ export { default as sync } from './sync.ts';
 export { default as minify } from './minify.ts';
 export { default as ejs } from './ejs.ts';
 export { default as i18n } from './i18n.ts';
+export { default as react } from './react.ts';

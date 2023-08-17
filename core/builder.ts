@@ -3,6 +3,7 @@ import logger from '../logger/mod.ts';
 import {
   batchPromise, cleanDir, fileRead, fileWrite, scanHtml,
 } from '../utils/mod.ts';
+import { optPromise } from '../utils/promise.ts';
 import { RouteContext, SenchaContext } from './config.ts';
 import { SenchaPlugin, pluginHook } from './plugin.ts';
 import { Route, RouteResult } from './route.ts';
@@ -125,6 +126,17 @@ export class Builder {
   }
 
   async compile(route: Route): Promise<string> {
+    if (route.file.endsWith('.ts') || route.file.endsWith('.js')) {
+      const { default: compile } = await import(route.file);
+      const result = await optPromise(compile, route);
+
+      if (typeof result !== 'string') {
+        this.logger.warn(`failed to compile "${route.file}"`);
+      } else {
+        return result;
+      }
+    }
+
     return await fileRead(route.file);
   }
 }

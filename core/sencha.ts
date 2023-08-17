@@ -1,10 +1,10 @@
 /**
- * Import any npm module to force node globals to inject.
- * This necessary till the issue gets fixed in deno:
+ * Import any node module to force node globals to inject.
+ * This is necessary till the issue gets fixed in deno:
  *
  * https://github.com/denoland/deno/issues/20028
  */
-import 'npm:is-number';
+import 'node:domain';
 
 import { deepMerge, fs, path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';

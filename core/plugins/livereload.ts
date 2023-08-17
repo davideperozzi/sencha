@@ -124,10 +124,13 @@ export default (sencha: Sencha) => {
         })
       },
       serverRenderRoute: ({ html }) => {
-        return html.replace(
-          '</head>',
-          `<script async src="${routePath}"></script></head>`
-        );
+        const script = `<script async src="${routePath}"></script>`;
+
+        if (html.search('</head>') > 0) {
+          return html.replace('</head>', `${script}</head>`);
+        } else {
+          return html + script;
+        }
       }
     }
   } as SenchaPlugin;

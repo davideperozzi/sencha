@@ -1,0 +1,3 @@
+Deno.test('plugin', async () => {
+
+});
