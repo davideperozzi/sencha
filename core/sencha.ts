@@ -29,6 +29,7 @@ import {
   createRoutesFromFiles, filterRoutes, parseRouteData, RouteFilter,
 } from './route.ts';
 import store from './store.ts';
+import { SenchaAction, actionHook } from './action.ts';
 
 export enum SenchaEvents {
   BUILD_START = 'build:start',
@@ -48,14 +49,18 @@ export class Sencha {
   private fetcher = new Fetcher();
   private corePlugins = [scriptPlugin(this), stylePlugin(this)];
   private loadedPlugins = new Map<(SenchaPlugin | OptPromise<(sencha: any) => SenchaPlugin>), SenchaPlugin>();
+  private loadedScripts = new Map<(SenchaAction | OptPromise<(sencha: any) => SenchaAction>), SenchaAction>()
   private plugins: SenchaPlugin[] = [ ...this.corePlugins ];
+  private actions: SenchaAction[] = [];
   private config: SenchaConfig = {
     locale: 'en',
     outDir: 'dist',
     rootDir: Deno.cwd(),
+    useActions: [],
     assetDir: '_',
     fetch: fetcherDefaultConfig,
     plugins: [],
+    actions: [],
     exposeApi: true,
     cache: !isDevelopment(),
     livereload: isDevelopment(),
@@ -180,6 +185,13 @@ export class Sencha {
     );
   }
 
+  actionHook(
+    hook: keyof SenchaAction['hooks'],
+    args: any[] = []
+  ) {
+    return actionHook(hook, args, this.actions);
+  }
+
   async start(
     { configFile = 'config.ts' }: SenchaStartConfig = {},
     configOverride?: SenchaOptions
@@ -196,7 +208,7 @@ export class Sencha {
 
     for (const options of partials) {
       if (typeof options === 'object') {
-        await this.configure(options as any);
+        await this.configure(options as SenchaOptions);
       }
     }
 
@@ -207,12 +219,13 @@ export class Sencha {
     }
 
     if (configOverride) {
-      this.configure(configOverride);
+      await this.configure(configOverride);
     }
 
     this.started = true;
 
     this.emitter.emit(SenchaEvents.START);
+    this.actionHook('beforeRun');
 
     return this;
   }
@@ -226,6 +239,7 @@ export class Sencha {
     this.fetcher.configure(this.config.fetch);
 
     const plugins: SenchaPlugin[] = [ ...this.corePlugins, this.config ];
+    const actions: SenchaAction[] = [];
 
     if (this.config.livereload) {
       plugins.push(livereloadPlugin(this));
@@ -235,16 +249,40 @@ export class Sencha {
       plugins.push(apiPlugin(this.config.api || {})(this));
     }
 
+    if (this.config.actions) {
+      for (const action of this.config.actions) {
+
+        let result = this.loadedScripts.get(action);
+
+        if ( ! result) {
+          result = await optPromise<SenchaAction>(action, this);
+        }
+
+        if (
+          this.config.useActions &&
+          (
+            this.config.useActions.includes(result.name) ||
+            this.config.useActions === '*'
+          )
+        ) {
+          actions.push(result);
+          this.loadedScripts.set(action, result);
+        }
+      }
+
+      this.actions = actions;
+    }
+
     if (this.config.plugins) {
       for (const plugin of this.config.plugins) {
-        if ( ! this.loadedPlugins.has(plugin)) {
-          const result = await optPromise<SenchaPlugin>(plugin, this);
+        let result = this.loadedPlugins.get(plugin);
 
-          plugins.push(result);
-          this.loadedPlugins.set(plugin, result);
-        } else {
-          plugins.push(this.loadedPlugins.get(plugin)!);
+        if ( ! result) {
+          result = await optPromise<SenchaPlugin>(plugin, this);
         }
+
+        plugins.push(result);
+        this.loadedPlugins.set(plugin, result);
       }
 
       this.plugins = plugins;
@@ -320,6 +358,7 @@ export class Sencha {
     };
 
     perfTime.start('build');
+    await this.actionHook('beforeBuild', [result]);
     await this.pluginHook('buildInit', [result]);
 
     const plugins = this.plugins;
@@ -374,6 +413,8 @@ export class Sencha {
       this.emitter.emit(SenchaEvents.BUILD_SUCCESS, result);
       this.logger.info(`build done in ${result.timeMs.toFixed(2)}ms`);
     }
+
+    await this.actionHook('afterBuild', [result]);
 
     return result;
   }

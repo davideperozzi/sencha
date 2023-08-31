@@ -19,7 +19,7 @@ export default (config: PugPluginConifg = {}) => {
           );
         }
       }
-    };
+    }
 
     return {
       hooks: {

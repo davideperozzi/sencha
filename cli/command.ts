@@ -50,6 +50,10 @@ const command = new Command()
     'Filter log messages with `msg.startsWith(logFilter)'
   )
   .option(
+    '--dev [dev:boolean]',
+    'Alias for --serve --watch --log-level=debug',
+  )
+  .option(
     '--serve [watch:boolean]',
     'Server static files'
   )
@@ -86,6 +90,10 @@ const command = new Command()
     'Disable the cache completely',
     { default: false }
   )
+  .option(
+    '--actions [actions]',
+    'Whether to run actions'
+  )
   .version(getVersion)
   .action(async ({
     config,
@@ -95,6 +103,7 @@ const command = new Command()
     serveNoTrailingSlash,
     logLevel,
     logFilter,
+    actions,
     noCache,
     noApi,
     serve,
@@ -113,7 +122,10 @@ const command = new Command()
     let watcherProc: Promise<void> = Promise.resolve();
     const senchaStart = sencha.start({ configFile: config }, {
       exposeApi: !noApi,
-      cache: !noCache
+      cache: !noCache,
+      useActions: actions === true ?  '*' : typeof actions === 'string'
+        ? actions.split(',').map((script) => script.trim())
+        : undefined
     });
 
     if (serve) {
@@ -150,12 +162,17 @@ const command = new Command()
           watcherProc,
           serverProc,
           senchaStart
-        ]).then(() => Deno.exit(243));
+        ]).then(() => {
+          sencha.actionHook('afterRun');
+          Deno.exit(243);
+        });
       });
     }
 
     if (watcher || server) {
       await new Promise(() => {});
+    } else {
+      sencha.actionHook('afterRun');
     }
   });
 

@@ -1,4 +1,5 @@
 import { OptPromise } from '../utils/mod.ts';
+import { SenchaAction } from './action.ts';
 import { AssetFile } from './asset.ts';
 import { FetchConfig, Fetcher } from './fetcher.ts';
 import { HealthCheck } from './health.ts';
@@ -70,7 +71,9 @@ export interface SenchaConfig extends SenchaPlugin {
   locale: string[] | string;
   fetch: FetchConfig;
   health?: (HealthCheck | string)[];
+  useActions: string[] | '*';
   plugins?: (SenchaPlugin | OptPromise<((sencha: any) => SenchaPlugin)>)[];
+  actions?: (SenchaAction | OptPromise<((sencha: any) => SenchaAction)>)[];
   livereload?: boolean;
   prettyUrls?: boolean;
 }
