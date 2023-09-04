@@ -7,6 +7,7 @@ import { OptPromise } from '../utils/mod.ts';
 import { BuildResult } from './config.ts';
 import { Route } from './route.ts';
 import { Sencha, SenchaEvents } from './sencha.ts';
+import { readState, writeState } from './state.ts';
 
 declare module './config.ts' {
   export interface HooksConfig {
@@ -87,7 +88,7 @@ export class Server {
   }
 
   private async restore() {
-    const routes = await this.sencha.state(['server', 'routes']);
+    const routes = await readState<Route[]>(['server', 'routes']);
 
     if (routes) {
       this.logger.debug(`restored ${routes.length} routes`);
@@ -100,7 +101,7 @@ export class Server {
 
     this.dynamicRouter = router;
 
-    await this.sencha.state(['server', 'routes'], routes)
+    await writeState(['server', 'routes'], routes);
     await this.sencha.pluginHook('serverUpgrade', [router, routes]);
 
     for (const route of routes) {
@@ -166,8 +167,8 @@ export class Server {
 
     const port = this.config.port || 8374;
     const hostname = this.config.host || '0.0.0.0';
-    const assetPath = this.sencha.assetDir;
-    const assetUrl = `/${path.relative(this.sencha.outDir, assetPath)}`;
+    const assetPath = this.sencha.dirs.asset;
+    const assetUrl = `/${path.relative(this.sencha.dirs.out, assetPath)}`;
 
     this.app.use(async (ctx, next) => {
       const pathname = ctx.request.url.pathname;

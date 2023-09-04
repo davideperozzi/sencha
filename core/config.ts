@@ -1,4 +1,5 @@
-import { OptPromise } from '../utils/mod.ts';
+import { deepMerge } from 'https://deno.land/std@0.201.0/collections/deep_merge.ts';
+import { OptPromise, isDevelopment } from '../utils/mod.ts';
 import { SenchaAction } from './action.ts';
 import { AssetFile } from './asset.ts';
 import { FetchConfig, Fetcher } from './fetcher.ts';
@@ -41,6 +42,9 @@ export interface HooksConfig {
   buildSuccess?: OptPromise<BuildHook>;
   buildFail?: OptPromise<BuildHook>;
   buildDone?: OptPromise<BuildHook>;
+  stateInit?: OptPromise<() => void>;
+  stateSet?: OptPromise<(key: string, value: unknown) => any>;
+  stateGet?: OptPromise<(key: string) => void>;
   assetProcess?: OptPromise<(asset: AssetFile) => void>;
   routeMount?: OptPromise<(context: RouteContext) => string | void>;
   viewCompile?: OptPromise<(context: RouteContext) => string | void>;
@@ -58,7 +62,10 @@ export interface RouteConfig {
 }
 
 export type SenchaOptions = Partial<SenchaConfig>;
-export interface SenchaConfig extends SenchaPlugin {
+export interface SenchaConfig
+  extends SenchaPlugin,
+  Record<PropertyKey, unknown>
+{
   rootDir: string;
   outDir: string;
   assetDir: string;
@@ -80,4 +87,25 @@ export interface SenchaConfig extends SenchaPlugin {
 
 export interface SenchaStartConfig {
   configFile?: string;
+}
+
+
+export function createConfig(config: SenchaOptions = {}): SenchaConfig {
+  return deepMerge<any>({
+    locale: 'en',
+    outDir: 'dist',
+    rootDir: Deno.cwd(),
+    useActions: [],
+    assetDir: '_',
+    fetch: {},
+    plugins: [],
+    actions: [],
+    exposeApi: true,
+    cache: !isDevelopment(),
+    livereload: isDevelopment(),
+    viewsDir: 'views',
+    layoutsDir: 'layouts',
+    includesDir: 'includes',
+    route: { pattern: '/:locale/:slug' },
+  }, config);
 }

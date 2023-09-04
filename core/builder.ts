@@ -3,8 +3,8 @@ import logger from '../logger/mod.ts';
 import {
   batchPromise, cleanDir, fileRead, fileWrite, scanHtml,
 } from '../utils/mod.ts';
-import { RouteContext, SenchaContext } from './config.ts';
-import { SenchaPlugin, pluginHook } from './plugin.ts';
+import { BuildResult, RouteContext, SenchaContext } from './config.ts';
+import { PluginManager } from './plugin.ts';
 import { Route, RouteResult } from './route.ts';
 
 declare module './config.ts' {
@@ -16,21 +16,36 @@ declare module './config.ts' {
 export interface BuilderConfig {
   outDir: string;
   parallel: number;
-  plugins: SenchaPlugin[];
   context: SenchaContext;
+  pluginManager: PluginManager;
 }
 
 export class Builder {
   protected logger = logger.child('builder');
+  protected pluginManager: PluginManager;
 
   constructor(
     protected config: BuilderConfig
-  ) {}
+  ) {
+    this.pluginManager = config.pluginManager;
+  }
+
+  static createResult(opts: Partial<BuildResult> = {}) {
+    return {
+      cache: false,
+      routes: [],
+      allRoutes: [],
+      timeMs: 0,
+      assets: [],
+      errors: [],
+      ...opts
+    } as BuildResult;
+  }
 
   async routeMount(route: Route) {
     const context: RouteContext = { sencha: this.config.context, route };
 
-    await pluginHook('routeMount', [context], this.config.plugins);
+    await this.pluginManager.runHook('routeMount', [context]);
 
     return context;
   }
@@ -44,10 +59,9 @@ export class Builder {
         routes,
         this.config.parallel,
         async (route) => {
-          let html = await pluginHook(
+          let html = await this.pluginManager.runHook(
             'viewCompile',
-            [await this.routeMount(route)],
-            this.config.plugins
+            [await this.routeMount(route)]
           );
 
           if (typeof html !== 'string') {
@@ -57,10 +71,9 @@ export class Builder {
           if (typeof html === 'string') {
             const result: RouteResult = { route, html };
 
-            html = await pluginHook(
+            html = await this.pluginManager.runHook(
               'viewParse',
               [result],
-              this.config.plugins,
               () => html,
               (newResult) => {
                 result.html = newResult;
@@ -69,10 +82,9 @@ export class Builder {
               }
             );
 
-            await pluginHook(
+            await this.pluginManager.runHook(
               'viewRender',
               [result],
-              this.config.plugins,
               async () => await this.render(result)
             );
 

@@ -8,10 +8,10 @@ export interface EtaPluginConfig {}
 export default (config: EtaPluginConfig = {}) => {
   return (sencha: Sencha) => {
     const eta = new Eta({
-      cache: sencha.cacheEnabled,
+      cache: sencha.cache,
       useWith: true,
       ...config,
-      views: sencha.rootDir,
+      views: sencha.dirs.root,
     });
 
     return {
@@ -21,7 +21,7 @@ export default (config: EtaPluginConfig = {}) => {
 
           if (route.file.endsWith('.eta')) {
             return await eta.renderAsync(
-              path.relative(sencha.rootDir, route.file),
+              path.relative(sencha.dirs.root, route.file),
               context
             );
           }

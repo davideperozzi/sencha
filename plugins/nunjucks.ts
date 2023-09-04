@@ -21,12 +21,12 @@ function createAsyncFilter(fn: any) {
 export default (config: NunjucksPluginConifg = {}) => {
   return (sencha: Sencha) => {
     const njkEnv = new nunjucks.Environment(
-      new nunjucks.FileSystemLoader(sencha.rootDir, {
+      new nunjucks.FileSystemLoader(sencha.dirs.root, {
         noCache: typeof config.noCache !== 'undefined'
           ? config.noCache
-          : !sencha.cacheEnabled
+          : !sencha.cache
       }),
-      { noCache: !sencha.cacheEnabled, ...config }
+      { noCache: !sencha.cache, ...config }
     );
 
     njkEnv.addFilter('await', createAsyncFilter(optPromise), true);

@@ -176,6 +176,12 @@ export function filterRoutes(routes: Route[], filter: RouteFilter = /.*/) {
   });
 }
 
+/**
+ * This will create an empty route with some default values.
+ *
+ * @param opts pre-defined values for the route
+ * @param parent the parent route to extend from
+ */
 export function createRoute(
   opts: Partial<Route> = {},
   parent: Partial<Route> = {}
@@ -197,30 +203,56 @@ export function createRoute(
   } as Route;
 }
 
-export function parseRoute(route: Route) {
+/**
+ * This will parse the route based on some conditions like `pretty`
+ *
+ * @param route the route to parse
+ */
+export function parseRoute(route: Route, outPath: string) {
   const rootRoute = route.slug === '/';
 
   route.url = route.pretty
     ? route.slug
     : (rootRoute ? '/index' : route.slug) + '.html';
 
+  route.out = route.url.endsWith('.html')
+    ? path.join(outPath, route.url)
+    : path.join(outPath, route.url, 'index.html');
+
   return route;
 }
 
+/**
+ * This will create routes from a given folder. It will also create
+ * localized routes if the `locales` array is not empty. It will
+ * also create routes for each parameter found in the route. The
+ * `config` object will be used to transform the path into a slug.
+ *
+ * It will also create a `localized` and `siblings` array for each route.
+ * The `localized` array will contain all routes that are localized
+ * to the same slug. The `siblings` array will contain all routes
+ * that share the same parameter.
+ *
+ * @param inputDir The folder to scan for files
+ * @param outputDir The folder to output the routes to
+ * @param config The config to transform the path into a slug
+ * @param locales All the languages to parse the routes for
+ */
 export async function createRoutesFromFiles(
-  folder: string,
+  inputDir: string,
+  outputDir: string,
   config: RouteConfig,
-  locales: string[] = []
+  locales: string[] = [],
 ) {
   const routes: Route[] = [];
-  const viewFiles = await scanDir(folder);
+  const viewFiles = await scanDir(inputDir);
   const langGroups = new ArrayMap<string, Route>();
   const paramGroups = new ArrayMap<string, Route>();
   const { pattern, params: allParams, pretty = true } = config;
 
   for (const lang of locales) {
     for (const file of viewFiles) {
-      const relFile = path.relative(folder, file);
+      const relFile = path.relative(inputDir, file);
       const view = cleanUrl(relFile, false, false, true);
       const langSlug = lang === locales[0] ? '' : lang;
       const slugBase = transformPathToSlug(view, { locale: '' }, pattern);
@@ -228,7 +260,7 @@ export async function createRoutesFromFiles(
       const route = createRoute({ lang, slug, file, view, pretty });
 
       if (hasRouteParams(slug)) {
-        const params = await optPromise(
+        const params: any[] = await optPromise(
           findRouteParams(view, allParams),
           route
         );
@@ -265,9 +297,20 @@ export async function createRoutesFromFiles(
     }
   }
 
-  return routes.map(route => parseRoute(route));
+  return routes.map(route => parseRoute(route, outputDir));
 }
 
+/**
+ * This will parse the route data for given routes. It will
+ * also filter the routes by the `view` property. The `data`
+ * object will be used to transform the path into a slug.
+ *
+ * Data prefixed with `__` will be considered as global and will be
+ * applied to all routes.
+ *
+ * @param routes The routes to parse the data for
+ * @param data The date to parse into the routes
+ */
 export async function parseRouteData(routes: Route[], data: RouteData) {
   for (const [key, value] of Object.entries(data)) {
     if (key !== '__') {

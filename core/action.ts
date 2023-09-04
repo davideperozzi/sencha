@@ -10,16 +10,18 @@ export interface SenchaAction {
   }
 }
 
-export async function actionHook(
-  name: keyof SenchaAction['hooks'],
-  args: any[] = [],
-  actions: SenchaAction[] = [],
-) {
-  for (const action of actions) {
-    const hook = action.hooks[name] as any;
+export class ActionManager {
+  constructor(
+    private readonly actions: SenchaAction[] = [],
+  ) {}
 
-    if (hook && typeof hook === 'function') {
-      await optPromise(hook(...args));
+  async runAction(name: keyof SenchaAction['hooks'], args: any[] = []) {
+    for (const action of this.actions) {
+      const hook = action.hooks[name] as any;
+
+      if (hook && typeof hook === 'function') {
+        await optPromise(hook(...args));
+      }
     }
   }
 }

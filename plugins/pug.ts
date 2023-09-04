@@ -36,7 +36,7 @@ export default (config: PugPluginConifg = {}) => {
             }
 
             return pug.renderFile(route.file, {
-              basedir: sencha.rootDir,
+              basedir: sencha.dirs.root,
               doctype: 'html',
               ...config
             });

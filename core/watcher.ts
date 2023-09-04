@@ -6,6 +6,7 @@ import { AssetFile } from './asset.ts';
 import { BuildResult } from './config.ts';
 import { RouteFilter } from './route.ts';
 import { Sencha, SenchaEvents } from './sencha.ts';
+import { readState } from './state.ts';
 
 export enum WatcherEvents {
   NEEDS_RELOAD = 'needsreload'
@@ -29,9 +30,11 @@ export class Watcher extends EventEmitter {
   ) {
     super();
 
-    if (sencha.lastBuildResult) {
-      this.state.result = sencha.lastBuildResult;
-    }
+    sencha.lastBuild.then((result) => {
+      if (result) {
+        this.state.result = result;
+      }
+    });
 
     sencha.emitter.on(SenchaEvents.BUILD_SUCCESS, (result: BuildResult) => {
       this.state.result = result;
@@ -39,11 +42,11 @@ export class Watcher extends EventEmitter {
   }
 
   async start() {
-    this.watcher = Deno.watchFs(this.sencha.rootDir, { recursive: true });
+    this.watcher = Deno.watchFs(this.sencha.dirs.root, { recursive: true });
     this.configFiles = await this.findConfigFiles();
 
     this.notifiers.clear();
-    this.logger.info('watching ' + this.sencha.rootDir);
+    this.logger.info('watching ' + this.sencha.dirs.root);
 
     for await (const event of this.watcher) {
       const dataStr = JSON.stringify(event);
@@ -82,7 +85,7 @@ export class Watcher extends EventEmitter {
         '--no-npm',
         '--no-remote',
         '--node-modules-dir=false',
-        this.sencha.configPath
+        this.sencha.configFile
       ]
     });
 
@@ -100,7 +103,6 @@ export class Watcher extends EventEmitter {
 
     for (const name in imports.modules) {
       const { local, emit } = imports.modules[name];
-
 
       if (local) {
         files.push({ file: local, cache: emit });
@@ -120,10 +122,11 @@ export class Watcher extends EventEmitter {
 
       if (configFile) {
         this.emit(WatcherEvents.NEEDS_RELOAD);
+        this.logger.debug('config file changed, sending reload event');
         continue;
       }
 
-      if (filePath.startsWith(this.sencha.outDir)) {
+      if (filePath.startsWith(this.sencha.dirs.out)) {
         continue;
       }
 
@@ -141,13 +144,13 @@ export class Watcher extends EventEmitter {
       );
 
       if (
-        filePath.startsWith(this.sencha.layoutsDir) ||
-        filePath.startsWith(this.sencha.includesDir)
+        filePath.startsWith(this.sencha.dirs.layouts) ||
+        filePath.startsWith(this.sencha.dirs.includes)
       ) {
         needsRebuild = true;
         break;
       } else {
-        if (filePath.startsWith(this.sencha.viewsDir)) {
+        if (filePath.startsWith(this.sencha.dirs.views)) {
           views.push(filePath);
         }
 

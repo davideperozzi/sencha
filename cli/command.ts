@@ -102,6 +102,7 @@ const command = new Command()
     servePort,
     serveNoTrailingSlash,
     logLevel,
+    dev,
     logFilter,
     actions,
     noCache,
@@ -109,6 +110,12 @@ const command = new Command()
     serve,
     watch
   }) => {
+    if (dev) {
+      watch = true;
+      serve = true;
+      logLevel = 'debug';
+    }
+
     streamLogs(watch ? 'debug' : logLevel, logFilter);
 
     if (watch && ! Deno.env.has('SENCHA_ENV')) {
@@ -120,7 +127,7 @@ const command = new Command()
     let watcher: Watcher | undefined;
     let serverProc: Promise<void> = Promise.resolve();
     let watcherProc: Promise<void> = Promise.resolve();
-    const senchaStart = sencha.start({ configFile: config }, {
+    const senchaStart = sencha.start(config, {
       exposeApi: !noApi,
       cache: !noCache,
       useActions: actions === true ?  '*' : typeof actions === 'string'
@@ -158,21 +165,18 @@ const command = new Command()
           server.stop();
         }
 
-        Promise.all([
-          watcherProc,
-          serverProc,
-          senchaStart
-        ]).then(() => {
-          sencha.actionHook('afterRun');
+        Promise.all([ watcherProc, serverProc ]).then(() => {
+          cliLogger.debug('watcher needs reload, leaving process with 243');
+          sencha.runAction('afterRun');
           Deno.exit(243);
         });
       });
     }
 
     if (watcher || server) {
-      await new Promise(() => {});
+      await Promise.all([ watcherProc, serverProc ]);
     } else {
-      sencha.actionHook('afterRun');
+      sencha.runAction('afterRun');
     }
   });
 

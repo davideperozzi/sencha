@@ -16,14 +16,14 @@ async function sync(
 ) {
   const from = sencha.path(config.from);
   const logger = sencha.logger.child('sync');
-  let to = config.to ? sencha.outPath(config.to) : sencha.outDir;
+  let to = config.to ? sencha.outPath(config.to) : sencha.dirs.out;
 
   if (config.to && path.isAbsolute(config.to)) {
-    to = sencha.path(path.relative(sencha.rootDir, config.to));
+    to = sencha.path(path.relative(sencha.dirs.root, config.to));
   }
 
-  if ( ! to.startsWith(sencha.outDir)) {
-    const relOutDir = path.relative(sencha.rootDir, sencha.outDir);
+  if ( ! to.startsWith(sencha.dirs.out)) {
+    const relOutDir = path.relative(sencha.dirs.root, sencha.dirs.out);
 
     logger.error(
       `to "${to}" is invalid. Can only sync within "${relOutDir}"`
@@ -32,14 +32,14 @@ async function sync(
     return;
   }
 
-  if (to === sencha.outDir) {
+  if (to === sencha.dirs.out) {
     to = path.join(to, path.basename(from));
   }
 
   const fromExists = await fs.exists(from);
   const toExists = await fs.exists(to);
-  const relFrom = path.relative(sencha.rootDir, from);
-  const relTo = path.relative(sencha.rootDir, to);
+  const relFrom = path.relative(sencha.dirs.root, from);
+  const relTo = path.relative(sencha.dirs.root, to);
   const statFrom = fromExists
     ? await Deno.stat(from)
     : { isDirectory: !path.extname(from) };
@@ -59,7 +59,7 @@ async function sync(
 
   if (filters.length > 0) {
     fromFiles = filters.filter(file => {
-      const relFilter = path.relative(sencha.rootDir, file);
+      const relFilter = path.relative(sencha.dirs.root, file);
 
       return relFilter.startsWith(relFrom);
     });

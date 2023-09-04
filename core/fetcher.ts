@@ -26,13 +26,13 @@ export interface FetcherInit<T = any> extends RequestInit {
   default?: T;
 }
 
-export const defaultConfig: FetchConfig = {
+export const fetcherDefaultConfig: FetchConfig = {
   endpoints: {},
 };
 
 export class Fetcher {
   private logger = logger.child('fetch');
-  private config = defaultConfig;
+  private config = fetcherDefaultConfig;
   private cache = new Map<string, any>();
   private measure = measure(this.logger);
   private requests = new Map<string, Promise<any>>();

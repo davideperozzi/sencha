@@ -63,7 +63,7 @@ export default (config: EsbuildPluginConfig = {}) => (sencha: Sencha) => {
             ...config,
             entryPoints: await expandEntryPoints(
               config.entryPoints,
-              sencha.rootDir
+              sencha.dirs.root
             ),
           })
         }

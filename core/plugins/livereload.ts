@@ -69,9 +69,9 @@ export default (sencha: Sencha) => {
   return {
     hooks: {
       watcherChange: ({ file }) => {
-        const relFile = path.relative(sencha.rootDir, file);
+        const relFile = path.relative(sencha.dirs.root, file);
 
-        if (relFile.startsWith('.') || file.startsWith(sencha.outDir)) {
+        if (relFile.startsWith('.') || file.startsWith(sencha.dirs.out)) {
           return;
         }
 

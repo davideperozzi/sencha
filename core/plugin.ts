@@ -8,18 +8,21 @@ export interface SenchaPlugin {
   filters?: Record<string, SenchaPluginFilter>;
 }
 
-export async function pluginHook(
-  name: keyof HooksConfig,
-  args: any[] = [],
-  plugins?: SenchaPlugin[],
-  fallback?: OptPromise<(...args: any[]) => any>,
-  breakCb?: (result: any) => boolean,
-  callback?: OptPromise<(...args: any[]) => any>
-) {
-  let result;
+export class PluginManager {
+  constructor(
+    private readonly plugins: SenchaPlugin[] = [],
+  ) {}
 
-  if (plugins) {
-    for (const plugin of plugins) {
+  async runHook(
+    name: keyof HooksConfig,
+    args: any[] = [],
+    fallback?: OptPromise<(...args: any[]) => any>,
+    breakCb?: (result: any) => boolean,
+    callback?: OptPromise<(...args: any[]) => any>
+  ): Promise<any> {
+    let result;
+
+    for (const plugin of this.plugins) {
       const hook = plugin.hooks?.[name] as any;
 
       if (hook && typeof hook === 'function') {
@@ -38,46 +41,45 @@ export async function pluginHook(
         }
       }
     }
-  }
 
-  if (result) {
-    return result;
-  }
-
-  return fallback ? await optPromise(fallback(...args)) : undefined;
-}
-
-
-export function pluginHookSync(
-  name: keyof HooksConfig,
-  args: any[] = [],
-  plugins?: SenchaPlugin[],
-  fallback?: OptPromise<(...args: any[]) => any>,
-  breakCb?: (result: any) => boolean
-) {
-  let result;
-
-  if (plugins) {
-    for (const plugin of plugins) {
-      const hook = plugin.hooks?.[name] as any;
-
-      if (hook && typeof hook === 'function') {
-        const newResult = hook(...args);
-
-        if (newResult) {
-          result = newResult;
-        }
-
-        if (breakCb && breakCb(result)) {
-          break;
-        }
-      }
+    if (result) {
+      return result;
     }
-  }
 
-  if (result) {
-    return result;
+    return fallback ? await optPromise(fallback(...args)) : undefined;
   }
-
-  return fallback ? fallback(...args) : undefined;
 }
+
+// export function pluginHookSync(
+//   name: keyof HooksConfig,
+//   args: any[] = [],
+//   plugins?: SenchaPlugin[],
+//   fallback?: OptPromise<(...args: any[]) => any>,
+//   breakCb?: (result: any) => boolean
+// ) {
+//   let result;
+
+//   if (plugins) {
+//     for (const plugin of plugins) {
+//       const hook = plugin.hooks?.[name] as any;
+
+//       if (hook && typeof hook === 'function') {
+//         const newResult = hook(...args);
+
+//         if (newResult) {
+//           result = newResult;
+//         }
+
+//         if (breakCb && breakCb(result)) {
+//           break;
+//         }
+//       }
+//     }
+//   }
+
+//   if (result) {
+//     return result;
+//   }
+
+//   return fallback ? fallback(...args) : undefined;
+// }
