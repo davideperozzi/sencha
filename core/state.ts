@@ -1,53 +1,64 @@
+import path from 'https://deno.land/std@0.109.0/node/path.ts';
+import { parse, stringify } from 'npm:@ungap/structured-clone/json';
+
 import { fs } from '../deps/std.ts';
-import { PluginManager } from './plugin.ts';
 
-let state: Promise<Deno.Kv>;
-
-export class StateManager {
-  constructor(
-    protected pluginManager: PluginManager
-  ) {}
-
-  async init() {
-    await this.pluginManager.runHook('stateInit', []);
-
-    return this;
-  }
-
-  async get(key: string) {
-    return await this.pluginManager.runHook('stateGet', [key]);
-  }
-
-  async set(key: string, value: unknown) {
-    await this.pluginManager.runHook('stateSet', [key, value]);
-
-    return this;
-  }
+export interface SenchaState {
+  get<T = unknown>(key: string): Promise<T|null|undefined>;
+  set<T = unknown>(key: string, value: T): Promise<T>;
 }
 
-
-export async function initState(file: string) {
-  if (state) {
-    return await state;
-  }
-
-  await fs.ensureFile(file);
-
-  return state = Deno.openKv(file);
+export interface DenoFileStateOptions {
+  file: string;
 }
 
-export async function writeState(key: Deno.KvKey, value: unknown) {
-  if ( ! state) {
-    throw new Error('state not initialized');
-  }
+export function denoFileState(config: DenoFileStateOptions): SenchaState {
+  const memory = new Map<string, unknown>();
 
-  return await (await state).set(key, value);
+  return {
+    get: async <T = unknown>(key: string) => {
+      const file = path.join(config.file, key);
+
+      if (memory.has(key)) {
+        return memory.get(key) as T;
+      }
+
+      if (await fs.exists(file)) {
+        const result =  parse(await Deno.readTextFile(file)) as T;
+
+        return result;
+      }
+
+      return undefined;
+    },
+    set: async <T = unknown>(key: string, value: T) => {
+      const file = path.join(config.file, key);
+      const data = stringify(value);
+
+      memory.set(key, value);
+      await fs.ensureFile(file);
+      await Deno.writeTextFile(file, data, { create: true });
+
+      return value;
+    }
+  };
 }
 
-export async function readState<T>(key: Deno.KvKey) {
-  if ( ! state) {
-    throw new Error('state not initialized');
-  }
+export interface DenoMemoryStateOptions {}
 
-  return (await (await state).get<T>(key)).value;
+export function denoMemoryState(
+  config: DenoMemoryStateOptions = {}
+): SenchaState {
+  const memory = new Map<string, unknown>();
+
+  return {
+    get: async <T = unknown>(key: string) => {
+      return memory.get(key) as T;
+    },
+    set: async <T = unknown>(key: string, value: T) => {
+      memory.set(key, value);
+
+      return value;
+    }
+  };
 }

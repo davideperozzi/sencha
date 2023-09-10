@@ -3,10 +3,9 @@ import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
 import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { AssetFile } from './asset.ts';
-import { BuildResult } from './config.ts';
+import { BuildResult, SenchaEvents, SenchaStates } from './config.ts';
 import { RouteFilter } from './route.ts';
-import { Sencha, SenchaEvents } from './sencha.ts';
-import { readState } from './state.ts';
+import { Sencha } from './sencha.ts';
 
 export enum WatcherEvents {
   NEEDS_RELOAD = 'needsreload'
@@ -30,7 +29,7 @@ export class Watcher extends EventEmitter {
   ) {
     super();
 
-    sencha.lastBuild.then((result) => {
+    sencha.state.get<BuildResult>(SenchaStates.LAST_RESULT).then((result) => {
       if (result) {
         this.state.result = result;
       }

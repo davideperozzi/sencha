@@ -5,7 +5,9 @@ import { ActionManager } from './action.ts';
 import { AssetFile, AssetProcessor } from './asset.ts';
 import { Builder } from './builder.ts';
 import {
-  BuildResult, createConfig, SenchaConfig, SenchaContext, SenchaOptions,
+  SenchaConfig, SenchaContext, SenchaDirs, SenchaEvents,
+  SenchaOptions, SenchaStates,
+  createConfig,
 } from './config.ts';
 import emitter from './emitter.ts';
 import { Fetcher, fetcherDefaultConfig } from './fetcher.ts';
@@ -16,32 +18,12 @@ import livereloadPlugin from './plugins/livereload.ts';
 import scriptPlugin from './plugins/script.ts';
 import stylePlugin from './plugins/style.ts';
 import {
-  createRoutesFromFiles, filterRoutes, parseRouteData, RouteFilter,
+  Route,
+  RouteFilter,
+  createRoutesFromFiles, filterRoutes, parseRouteData,
 } from './route.ts';
-import { StateManager, initState, readState, writeState } from './state.ts';
+import { SenchaState } from './state.ts';
 import store from './store.ts';
-
-export enum SenchaEvents {
-  BUILD_START = 'build:start',
-  BUILD_SUCCESS = 'build:success',
-  BUILD_FAIL = 'build:fail',
-  BUILD_DONE = 'build:done',
-  CONFIG_UPDATE = 'config:update',
-  START = 'start',
-}
-
-export enum SenchaStates {
-  LAST_RESULT = 'sencha.lastResult'
-}
-
-export interface SenchaDirs {
-  root: string;
-  asset: string;
-  views: string;
-  layouts: string;
-  includes: string;
-  out: string;
-}
 
 const defaultOptions: SenchaOptions = { fetch: fetcherDefaultConfig };
 
@@ -49,10 +31,10 @@ export class Sencha {
   private loader = new Loader(createConfig(defaultOptions), [this]);
   private pluginManager = new PluginManager(this.loader.plugins);
   private actionManager = new ActionManager(this.loader.actions);
-  private stateManager = new StateManager(this.pluginManager);
   private fetcher = new Fetcher();
-  private config = this.loader.config;
   private currentDirs?: SenchaDirs;
+  private started = false;
+  private starting = false;
   readonly logger = logger.child('sencha');
   readonly fetch = this.fetcher.fetch.bind(this.fetcher);
   readonly pluginHook = this.pluginManager.runHook.bind(this.pluginManager);
@@ -75,7 +57,6 @@ export class Sencha {
       this.update(config);
     }
 
-    initState(this.path('.sencha', 'state'));
     this.pluginHook('senchaInit', [this]);
   }
 
@@ -87,8 +68,25 @@ export class Sencha {
     return this.path(this.config.outDir, ...paths);
   }
 
-  get lastBuild() {
-    return readState<BuildResult>(['sencha', 'lastBuildResult']);
+  clear() {
+    this.fetcher.clear();
+
+    return this;
+  }
+
+  hasStarted() {
+    return this.started;
+  }
+
+  get state() {
+    return {
+      get: this.config.state?.get || (() => Promise.resolve(undefined)),
+      set: this.config.state?.set || (() => Promise.resolve())
+    } as SenchaState;
+  }
+
+  get config() {
+    return this.loader.config;
   }
 
   get configFile() {
@@ -128,12 +126,27 @@ export class Sencha {
   }
 
   async start(configFile = 'config.ts', override?: SenchaOptions) {
+    if (this.started || this.starting) {
+      return false;
+    }
+
+    this.starting = true;
+
     await this.loader.load(this.path(configFile), this.loadPlugins.bind(this));
     delete this.currentDirs;
 
     if (override) {
       await this.update(override);
     }
+
+    setTimeout(() => {
+      this.started = true;
+      this.starting = false;
+
+      this.emitter.emit(SenchaEvents.START);
+    });
+
+    return true;
   }
 
   private loadPlugins(plugins: SenchaPlugin[], config: SenchaConfig) {
@@ -153,7 +166,7 @@ export class Sencha {
 
   async processAssets(cache = false, customAssets?: AssetFile[]) {
     const timeLog = measure(this.logger);
-    const errors: any[] = [];
+    const errors: Error[] = [];
     let assets: AssetFile[] = [];
 
     timeLog.start('assets');
@@ -188,17 +201,24 @@ export class Sencha {
     await this.runAction('beforeBuild', [result]);
     await this.pluginHook('buildInit', [result]);
 
-    const allRoutes = await this.parseRoutes();
+    perfTime.start('parse-routes');
+    const { routes: allRoutes, removedRoutes } = await this.parseRoutes();
+    perfTime.end('parse-routes', 'parsed routes');
+
+    perfTime.start('filter-routes');
     const filteredRoutes = filter ? filterRoutes(allRoutes, filter) : allRoutes;
+    perfTime.end('filter-routes', 'filterd routes');
+
     const builder = new Builder({
       pluginManager: this.pluginManager,
+      state: this.state,
       outDir: this.dirs.out,
       context: this.context,
       parallel: 500
     });
 
-    result.routes = filteredRoutes;
-    result.allRoutes = allRoutes;
+    result.routes = filteredRoutes.map((route) => route.slug);
+    result.allRoutes = allRoutes.map((route) => route.slug);
 
     this.emitter.emit(SenchaEvents.BUILD_START, result);
     await this.pluginHook('buildStart', [result]);
@@ -209,7 +229,10 @@ export class Sencha {
     const buildResult = await builder.build(filteredRoutes);
 
     result.errors.push(...buildResult.errors);
-    await builder.tidy(allRoutes);
+
+    perfTime.start('tidy-routes');
+    await builder.tidy(allRoutes, removedRoutes);
+    perfTime.end('tidy-routes', 'tidied routes');
 
     perfTime.end('routes', 'built routes');
 
@@ -234,14 +257,22 @@ export class Sencha {
     result.timeMs += perfTime.end('done');
 
     this.emitter.emit(SenchaEvents.BUILD_DONE, result);
-    this.stateManager.set(SenchaStates.LAST_RESULT, result);
-    // await writeState(['sencha', 'lastBuildResult'], result);
+    await this.state.set(SenchaStates.LAST_RESULT, result);
 
     if (failed) {
       this.emitter.emit(SenchaEvents.BUILD_FAIL, result);
       this.logger.error(`build failed with ${result.errors.length} errors`);
     } else {
       this.emitter.emit(SenchaEvents.BUILD_SUCCESS, result);
+      this.state.set(SenchaStates.LAST_ROUTES, allRoutes);
+
+      if (filter) {
+        this.emitter.emit(SenchaEvents.ROUTES_FULL_UPDATE, allRoutes);
+        // this.emitter.emit(SenchaEvents.ROUTES_PARTIAL_UPDATE, filterRoutes);
+      } else {
+        this.emitter.emit(SenchaEvents.ROUTES_FULL_UPDATE, allRoutes);
+      }
+
       this.logger.info(`build done in ${result.timeMs.toFixed(2)}ms`);
     }
 
@@ -252,6 +283,7 @@ export class Sencha {
 
   async parseRoutes() {
     const { route: routeConfig } = this.config;
+    const lastRoutes = await this.state.get<Route[]>(SenchaStates.LAST_ROUTES);
     const routes = await createRoutesFromFiles(
       this.dirs.views,
       this.dirs.out,
@@ -263,6 +295,18 @@ export class Sencha {
       await parseRouteData(routes, routeConfig.data);
     }
 
-    return routes;
+    let removedRoutes: string[] | undefined;
+
+    if (lastRoutes) {
+      removedRoutes = [];
+
+      for (const route of lastRoutes) {
+        if ( ! routes.find((r) => r.slug === route.slug)) {
+          removedRoutes.push(route.out);
+        }
+      }
+    }
+
+    return { routes, removedRoutes };
   }
 }

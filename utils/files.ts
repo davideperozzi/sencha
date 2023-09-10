@@ -1,5 +1,27 @@
 import { fs, path } from '../deps/std.ts';
 
+export function scanDirSync(dirPath: string): string[] {
+  const filePaths: string[] = [];
+  const dirs: string[] = [dirPath];
+
+  while (dirs.length > 0) {
+    const currentDir = dirs.pop()!;
+    const entries = Deno.readDirSync(currentDir);
+
+    for (const entry of entries) {
+      const fullPath = `${currentDir}/${entry.name}`;
+
+      if (entry.isFile) {
+        filePaths.push(fullPath);
+      } else if (entry.isDirectory) {
+        dirs.push(fullPath);
+      }
+    }
+  }
+
+  return filePaths;
+}
+
 export async function scanDir(dirPath: string): Promise<string[]> {
   const files: string[] = [];
 
@@ -21,38 +43,39 @@ export async function scanDir(dirPath: string): Promise<string[]> {
 }
 
 export async function scanHtml(dirPath: string) {
-  return (await scanDir(dirPath))
-    .filter((file) => file.endsWith('.html'));
+  return (await scanDir(dirPath)).filter((file) => file.endsWith('.html'));
 }
 
-export async function cleanDir(dir: string, first = true) {
+export function scanHtmlSync(dirPath: string) {
+  return scanDirSync(dirPath).filter((file) => file.endsWith('.html'));
+}
+
+export async function cleanDir(dir: string) {
+  let isEmpty = true;
+
   if ( ! await fs.exists(dir)) {
-    return;
+    return isEmpty;
   }
 
-  const stat = await Deno.stat(dir);
+  for await (const entry of Deno.readDir(dir)) {
+    const fullPath = path.join(dir, entry.name);
 
-  if ( ! stat.isDirectory) {
-    return;
+    if (entry.isDirectory) {
+      const isSubDirEmpty = await cleanDir(fullPath);
+
+      if (isSubDirEmpty) {
+        try {
+          await Deno.remove(fullPath);
+        } catch {}
+      } else {
+        isEmpty = false;
+      }
+    } else {
+      isEmpty = false;
+    }
   }
 
-  for await (const file of Deno.readDir(dir)) {
-    const filePath = path.join(dir, file.name);
-
-    await cleanDir(filePath, false);
-  }
-
-  const files: string[] = [];
-
-  for await (const file of Deno.readDir(dir)) {
-    files.push(path.join(dir, file.name));
-  }
-
-  if (files.length == 0 && !first) {
-    try {
-      await Deno.remove(dir);
-    } catch {}
-  }
+  return isEmpty;
 }
 
 export async function fileWrite(path: string, content: string) {

@@ -1,18 +1,22 @@
-import { deepMerge } from 'https://deno.land/std@0.201.0/collections/deep_merge.ts';
-import { OptPromise, isDevelopment } from '../utils/mod.ts';
+import {
+  deepMerge,
+} from 'https://deno.land/std@0.201.0/collections/deep_merge.ts';
+
+import { isDevelopment, OptPromise } from '../utils/mod.ts';
 import { SenchaAction } from './action.ts';
 import { AssetFile } from './asset.ts';
 import { FetchConfig, Fetcher } from './fetcher.ts';
 import { HealthCheck } from './health.ts';
 import { SenchaPlugin, SenchaPluginFilter } from './plugin.ts';
 import { Route, RouteData, RouteParams } from './route.ts';
+import { denoFileState, SenchaState } from './state.ts';
 import store from './store.ts';
 
 export interface BuildResult {
   cache: boolean;
   timeMs: number;
-  routes: Route[];
-  allRoutes: Route[];
+  routes: string[];
+  allRoutes: string[];
   assets: AssetFile[];
   errors: any[];
 }
@@ -75,6 +79,7 @@ export interface SenchaConfig
   route: RouteConfig;
   exposeApi?: boolean;
   cache?: boolean;
+  state?: SenchaState;
   locale: string[] | string;
   fetch: FetchConfig;
   health?: (HealthCheck | string)[];
@@ -89,17 +94,42 @@ export interface SenchaStartConfig {
   configFile?: string;
 }
 
+export enum SenchaEvents {
+  BUILD_START = 'build:start',
+  BUILD_SUCCESS = 'build:success',
+  BUILD_FAIL = 'build:fail',
+  BUILD_DONE = 'build:done',
+  CONFIG_UPDATE = 'config:update',
+  ROUTES_PARTIAL_UPDATE = 'routes:update',
+  ROUTES_FULL_UPDATE = 'routes:fullUpdate',
+  START = 'start',
+}
 
-export function createConfig(config: SenchaOptions = {}): SenchaConfig {
-  return deepMerge<any>({
+export enum SenchaStates {
+  LAST_RESULT = 'sencha.lastResult',
+  LAST_ROUTES = 'sencha.lastRoutes',
+}
+
+export interface SenchaDirs {
+  root: string;
+  asset: string;
+  views: string;
+  layouts: string;
+  includes: string;
+  out: string;
+}
+
+export function createConfig(config: SenchaOptions = {}) {
+  return deepMerge<SenchaConfig>({
     locale: 'en',
     outDir: 'dist',
     rootDir: Deno.cwd(),
     useActions: [],
     assetDir: '_',
-    fetch: {},
     plugins: [],
     actions: [],
+    state: denoFileState({ file: '.sencha/state' }),
+    fetch: { endpoints: {} },
     exposeApi: true,
     cache: !isDevelopment(),
     livereload: isDevelopment(),
@@ -107,5 +137,5 @@ export function createConfig(config: SenchaOptions = {}): SenchaConfig {
     layoutsDir: 'layouts',
     includesDir: 'includes',
     route: { pattern: '/:locale/:slug' },
-  }, config);
+  } as SenchaOptions, config);
 }

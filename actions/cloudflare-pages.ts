@@ -38,7 +38,7 @@ export default (
           projectName: config.projectName,
           branch: config.branch,
           skipCaching: config.skipCaching,
-          directory: sencha.outDir
+          directory: sencha.dirs.out
         });
 
         const endTime = Math.round(performance.now() - startTime) / 1000;

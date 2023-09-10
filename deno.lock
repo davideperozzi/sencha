@@ -765,6 +765,13 @@
     "https://deno.land/x/source_map@0.6.2/lib/source-node.js": "e3fa5e9fb604b770ad803a04a79a03b917356dcfb4de671e6b9466276608edca",
     "https://deno.land/x/source_map@0.6.2/lib/util.js": "8095afcc2f330d40637849308441c5d64c45b24aa8dc985a148b665099b3004e",
     "https://deno.land/x/source_map@0.6.2/mod.js": "5fb2a8af1c6ab0f17ab4033db8b412402d28d661344747beba19387addab2b32",
+    "https://deno.land/x/superserial@0.3.4/deserialize.ts": "444c0d2017bc30665c0db00dd1980e35b53fbe2aa1ce1fcda45e7c5d4609ffce",
+    "https://deno.land/x/superserial@0.3.4/mod.ts": "c3202f75812fc7e81088bebfa40b7901d3fa58724380707438a569d6a2e0ec47",
+    "https://deno.land/x/superserial@0.3.4/parse.ts": "9fab6ce12f5879265fd0cf2898b06014d419e5193dc1656547153f267abd184e",
+    "https://deno.land/x/superserial@0.3.4/serialize.ts": "d06b863ee27dadb56e9e67e6a72bf3e1ba8be146c46c59f3a95b88e725182b2b",
+    "https://deno.land/x/superserial@0.3.4/serializer.ts": "92fc99459d7daf2d6dce1d0b320fc63eb379d93023bd9f1720ebd310699c4a72",
+    "https://deno.land/x/superserial@0.3.4/symbol.ts": "1b2d5edbe4876716ca75ec37be691bc217cdda702f39c4d7541aec604e01abac",
+    "https://deno.land/x/superserial@0.3.4/types.ts": "ff18d7a3a52b549928392c2de8c12193abf184f0ecf8ec259de3a8f87cd3ffe3",
     "https://deno.land/x/y18n@v5.0.0-deno/build/lib/index.js": "92c4624714aa508d33c6d21c0b0ffa072369a8b306e5f8c7727662f570bbd026",
     "https://deno.land/x/y18n@v5.0.0-deno/deno.ts": "80997f0709a0b43d29931e2b33946f2bbc32b13fd82f80a5409628455427e28d",
     "https://deno.land/x/y18n@v5.0.0-deno/lib/platform-shims/deno.ts": "8fa2c96ac03734966260cfd2c5bc240e41725c913e5b64a0297aede09f52b39d",
@@ -802,8 +809,10 @@
       "@types/nunjucks": "@types/nunjucks@3.2.2",
       "@types/pug": "@types/pug@2.0.6",
       "@types/yargs": "@types/yargs@17.0.24",
+      "@ungap/structured-clone": "@ungap/structured-clone@1.2.0",
       "eta": "eta@3.1.0",
       "eta@3.0.3": "eta@3.0.3",
+      "flatted": "flatted@3.2.7",
       "html-minifier": "html-minifier@4.0.0",
       "i18n": "i18n@0.15.1",
       "i18next": "i18next@23.2.11",
@@ -1116,6 +1125,10 @@
         "dependencies": {
           "@types/yargs-parser": "@types/yargs-parser@21.0.0"
         }
+      },
+      "@ungap/structured-clone@1.2.0": {
+        "integrity": "sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==",
+        "dependencies": {}
       },
       "a-sync-waterfall@1.0.1": {
         "integrity": "sha512-RYTOHHdWipFUliRFMCS4X2Yn2X8M87V/OpSqWzKKOGhzqyUxzyVmhHDH9sAvG+ZuQf/TAOFsLCpMw09I1ufUnA==",
@@ -1465,6 +1478,10 @@
         "dependencies": {
           "to-regex-range": "to-regex-range@5.0.1"
         }
+      },
+      "flatted@3.2.7": {
+        "integrity": "sha512-5nqDSxl8nn5BSNxyR3n4I6eDmbolI6WT+QqR547RwxQapgjQBmtktdP+HTBb/a/zLsbzERTONyUB5pefh5TtjQ==",
+        "dependencies": {}
       },
       "fs-constants@1.0.0": {
         "integrity": "sha512-y6OAwoSIf7FyjMIv94u+b5rdheZEjzR63GTyZJm5qh4Bi+2YgwLCcI/fPFZkL5PSixOt6ZNKm+w+Hfp/Bciwow==",

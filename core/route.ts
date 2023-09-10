@@ -252,9 +252,9 @@ export async function createRoutesFromFiles(
 
   for (const lang of locales) {
     for (const file of viewFiles) {
+      const langSlug = lang === locales[0] ? '' : lang;
       const relFile = path.relative(inputDir, file);
       const view = cleanUrl(relFile, false, false, true);
-      const langSlug = lang === locales[0] ? '' : lang;
       const slugBase = transformPathToSlug(view, { locale: '' }, pattern);
       const slug = transformPathToSlug(view, { locale: langSlug }, pattern);
       const route = createRoute({ lang, slug, file, view, pretty });
@@ -285,17 +285,19 @@ export async function createRoutesFromFiles(
     }
   }
 
-  for (const [_, group] of langGroups) {
-    for (const route of group) {
-      route.localized = group.filter(sib => sib !== route);
-    }
-  }
+  // @todo: find a better way, this takes way too many resource with many routes
+  //
+  // for (const [_, group] of langGroups) {
+  //   for (const route of group) {
+  //     route.localized = group.filter(sib => sib !== route);
+  //   }
+  // }
 
-  for (const [_, group] of paramGroups) {
-    for (const route of group) {
-      route.siblings = group.filter(sib => sib !== route);
-    }
-  }
+  // for (const [_, group] of paramGroups) {
+  //   for (const route of group) {
+  //     route.siblings = group.filter(sib => sib !== route);
+  //   }
+  // }
 
   return routes.map(route => parseRoute(route, outputDir));
 }

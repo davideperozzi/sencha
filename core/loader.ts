@@ -21,9 +21,13 @@ export class Loader<T extends SenchaConfig, A> {
   currentFile?: string;
 
   constructor(
-    public readonly config: T,
+    private _config: T,
     public args: A[]
   ) {}
+
+  get config() {
+    return this._config;
+  }
 
   async load(
     file: string,
@@ -69,11 +73,11 @@ export class Loader<T extends SenchaConfig, A> {
     await Promise.all(deferred.map((fn) => fn()));
     this.logger.debug(`loaded ${partials.length} partials from config`);
 
-    return this.config;
+    return this._config;
   }
 
   async update(options: Partial<T>) {
-    deepMerge<T>(this.config, options);
+    this._config = deepMerge<T>(this._config, options);
 
     if (options.plugins) {
       this.plugins.length = 0;
@@ -103,10 +107,10 @@ export class Loader<T extends SenchaConfig, A> {
   }
 
   private async updatePlugins(plugins: LoaderPlugin[]) {
-    const activePlugins: SenchaPlugin[] = [ this.config ];
+    const activePlugins: SenchaPlugin[] = [ this._config ];
 
     if (this.updatePluginsCb) {
-      this.updatePluginsCb(activePlugins, this.config);
+      this.updatePluginsCb(activePlugins, this._config);
     }
 
     for (const plugin of plugins) {
@@ -125,10 +129,10 @@ export class Loader<T extends SenchaConfig, A> {
 
   private async updateActions(actions: LoaderAction[]) {
     const activeActions: SenchaAction[] = [];
-    const { useActions } = this.config;
+    const { useActions } = this._config;
 
     if (this.updateActionsCb) {
-      this.updateActionsCb(activeActions, this.config);
+      this.updateActionsCb(activeActions, this._config);
     }
 
     for (const action of actions) {

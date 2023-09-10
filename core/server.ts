@@ -4,10 +4,9 @@ import {
 import { fs, path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { OptPromise } from '../utils/mod.ts';
-import { BuildResult } from './config.ts';
+import { SenchaEvents } from './config.ts';
 import { Route } from './route.ts';
-import { Sencha, SenchaEvents } from './sencha.ts';
-import { readState, writeState } from './state.ts';
+import { Sencha } from './sencha.ts';
 
 declare module './config.ts' {
   export interface HooksConfig {
@@ -74,21 +73,31 @@ export class Server {
     private sencha: Sencha,
     private config: ServerConfig = {}
   ) {
-    this.restore();
-    this.sencha.emitter.on(SenchaEvents.START, () => this.init());
+    if (this.sencha.hasStarted()) {
+      this.init();
+    } else {
+      this.sencha.emitter.on(SenchaEvents.START, () => this.init());
+    }
   }
 
   private async init() {
+    this.restore();
+
     this.sencha.emitter.on(
-      SenchaEvents.BUILD_SUCCESS,
-      ({ allRoutes }: BuildResult) => this.update(allRoutes)
+      SenchaEvents.ROUTES_FULL_UPDATE,
+      this.update.bind(this)
+    );
+
+    this.sencha.emitter.on(
+      SenchaEvents.ROUTES_PARTIAL_UPDATE,
+      this.update.bind(this)
     );
 
     await this.sencha.pluginHook('serverInit', [this.staticRouter]);
   }
 
   private async restore() {
-    const routes = await readState<Route[]>(['server', 'routes']);
+    const routes = await this.sencha.state.get<Route[]>('sencha.serverRoutes');
 
     if (routes) {
       this.logger.debug(`restored ${routes.length} routes`);
@@ -101,7 +110,7 @@ export class Server {
 
     this.dynamicRouter = router;
 
-    await writeState(['server', 'routes'], routes);
+    await this.sencha.state.set('sencha.serverRoutes', routes);
     await this.sencha.pluginHook('serverUpgrade', [router, routes]);
 
     for (const route of routes) {
