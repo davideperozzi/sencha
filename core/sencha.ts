@@ -1,29 +1,29 @@
-import { path } from '../deps/std.ts';
-import logger from '../logger/mod.ts';
-import { measure } from '../utils/perf.ts';
-import { ActionManager } from './action.ts';
-import { AssetFile, AssetProcessor } from './asset.ts';
-import { Builder } from './builder.ts';
+import path from 'node:path';
+
+import logger from '../logger';
+import { measure } from '../utils/perf';
+import { ActionManager } from './action';
+import { AssetFile, AssetProcessor } from './asset';
+import { Builder } from './builder';
 import {
   SenchaConfig, SenchaContext, SenchaDirs, SenchaEvents,
   SenchaOptions, SenchaStates,
   createConfig,
-} from './config.ts';
-import emitter from './emitter.ts';
-import { Fetcher, fetcherDefaultConfig } from './fetcher.ts';
-import { Loader } from './loader.ts';
-import { PluginManager, SenchaPlugin } from './plugin.ts';
-import apiPlugin from './plugins/api.ts';
-import livereloadPlugin from './plugins/livereload.ts';
-import scriptPlugin from './plugins/script.ts';
-import stylePlugin from './plugins/style.ts';
+} from './config';
+import emitter from './emitter';
+import { Fetcher, fetcherDefaultConfig } from './fetcher';
+import { Loader } from './loader';
+import { PluginManager, SenchaPlugin } from './plugin';
+import apiPlugin from './plugins/api';
+import livereloadPlugin from './plugins/livereload';
+import scriptPlugin from './plugins/script';
+import stylePlugin from './plugins/style';
 import {
-  Route,
-  RouteFilter,
+  Route, RouteFilter,
   createRoutesFromFiles, filterRoutes, parseRouteData,
-} from './route.ts';
-import { SenchaState } from './state.ts';
-import store from './store.ts';
+} from './route';
+import { SenchaState } from './state';
+import store from './store';
 
 const defaultOptions: SenchaOptions = { fetch: fetcherDefaultConfig };
 
@@ -177,7 +177,7 @@ export class Sencha {
         cache,
         customAssets
       );
-    } catch (err) {
+    } catch (err: any) {
       errors.push(err);
       this.logger.error(err);
     }
@@ -205,10 +205,7 @@ export class Sencha {
     const { routes: allRoutes, removedRoutes } = await this.parseRoutes();
     perfTime.end('parse-routes', 'parsed routes');
 
-    perfTime.start('filter-routes');
     const filteredRoutes = filter ? filterRoutes(allRoutes, filter) : allRoutes;
-    perfTime.end('filter-routes', 'filterd routes');
-
     const builder = new Builder({
       pluginManager: this.pluginManager,
       state: this.state,

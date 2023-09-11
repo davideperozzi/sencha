@@ -1,4 +1,4 @@
-import { Sencha } from '../core/mod.ts';
+import { Sencha } from '../core';
 
 export interface EjsPluginConfig {}
 

@@ -1,16 +1,13 @@
-import {
-  deepMerge,
-} from 'https://deno.land/std@0.201.0/collections/deep_merge.ts';
-
-import { isDevelopment, OptPromise } from '../utils/mod.ts';
-import { SenchaAction } from './action.ts';
-import { AssetFile } from './asset.ts';
-import { FetchConfig, Fetcher } from './fetcher.ts';
-import { HealthCheck } from './health.ts';
-import { SenchaPlugin, SenchaPluginFilter } from './plugin.ts';
-import { Route, RouteData, RouteParams } from './route.ts';
-import { denoFileState, SenchaState } from './state.ts';
-import store from './store.ts';
+import deepmerge from '@fastify/deepmerge';
+import { isDevelopment, OptPromise } from '../utils';
+import { SenchaAction } from './action';
+import { AssetFile } from './asset';
+import { FetchConfig, Fetcher } from './fetcher';
+import { HealthCheck } from './health';
+import { SenchaPlugin, SenchaPluginFilter } from './plugin';
+import { Route, RouteData, RouteParams } from './route';
+import { denoFileState, SenchaState } from './state';
+import store from './store';
 
 export interface BuildResult {
   cache: boolean;
@@ -34,7 +31,7 @@ export interface RouteContext {
 
 export interface WatcherChangeEvent {
   file: string;
-  type: Deno.FsEvent
+  type: any;//FsEvent;
 }
 
 export type BuildHook = (result: BuildResult) => void;
@@ -120,10 +117,10 @@ export interface SenchaDirs {
 }
 
 export function createConfig(config: SenchaOptions = {}) {
-  return deepMerge<SenchaConfig>({
+  return deepmerge()({
     locale: 'en',
     outDir: 'dist',
-    rootDir: Deno.cwd(),
+    rootDir: process.cwd(),
     useActions: [],
     assetDir: '_',
     plugins: [],
@@ -137,5 +134,5 @@ export function createConfig(config: SenchaOptions = {}) {
     layoutsDir: 'layouts',
     includesDir: 'includes',
     route: { pattern: '/:locale/:slug' },
-  } as SenchaOptions, config);
+  } as SenchaOptions, config) as SenchaConfig;
 }

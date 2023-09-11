@@ -1,4 +1,4 @@
-import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
+import { EventEmitter } from 'node:events';
 
 export class Emitter extends EventEmitter {}
 

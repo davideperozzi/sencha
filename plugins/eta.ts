@@ -1,7 +1,7 @@
-import { Eta } from 'npm:eta';
+import { Eta } from 'eta';
 
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
-import { path } from '../deps/std.ts';
+import { Sencha, SenchaPlugin } from '../core';
+import path from 'node:path';
 
 export interface EtaPluginConfig {}
 

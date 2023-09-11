@@ -1,6 +1,9 @@
-import { fs, path } from '../deps/std.ts';
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
-import { scanDir } from '../utils/mod.ts';
+import { existsSync, statSync } from 'node:fs';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { Sencha, SenchaPlugin } from '../core';
+import { ensureDir, scanDir } from '../utils';
 
 export interface SyncPluginOptions {
   from: string;
@@ -41,10 +44,10 @@ async function sync(
   const relFrom = path.relative(sencha.dirs.root, from);
   const relTo = path.relative(sencha.dirs.root, to);
   const statFrom = fromExists
-    ? await Deno.stat(from)
+    ? await fs.stat(from)
     : { isDirectory: !path.extname(from) };
   const statTo = toExists
-    ? await Deno.stat(to)
+    ? await fs.stat(to)
     : { isDirectory: !path.extname(to) };
 
   let fromFiles: string[] = [];
@@ -69,7 +72,7 @@ async function sync(
     }
 
     fromFiles = fromFiles.filter(file => {
-      return fs.existsSync(file) && !Deno.statSync(file).isDirectory;
+      return existsSync(file) && !statSync(file).isDirectory;
     });
   } else {
     fromFiles = statFrom.isDirectory ? await scanDir(from) : [from];
@@ -87,10 +90,10 @@ async function sync(
     const fromFile = path.join(from, file);
     const toFile = path.join(to, file);
 
-    await fs.ensureDir(path.dirname(toFile));
+    await ensureDir(path.dirname(toFile));
 
     if (await fs.exists(fromFile)) {
-      await Deno.copyFile(fromFile, toFile);
+      await fs.copyFile(fromFile, toFile);
     }
 
     copies++;
@@ -102,7 +105,7 @@ async function sync(
 
       if (await fs.exists(toFile)) {
         try {
-          await Deno.remove(path.join(to, file));
+          await fs.rm(path.join(to, file));
         } catch(err) {
           logger.warn(`failed to remove "${toFile}": ` + err);
         }

@@ -1,4 +1,5 @@
-import { fs, path } from '../deps/std.ts';
+import { promises as fs, readdirSync, statSync } from 'node:fs';
+import path from 'node:path';
 
 export function scanDirSync(dirPath: string): string[] {
   const filePaths: string[] = [];
@@ -6,14 +7,15 @@ export function scanDirSync(dirPath: string): string[] {
 
   while (dirs.length > 0) {
     const currentDir = dirs.pop()!;
-    const entries = Deno.readDirSync(currentDir);
+    const entries = readdirSync(currentDir);
 
     for (const entry of entries) {
-      const fullPath = `${currentDir}/${entry.name}`;
+      const fullPath = `${currentDir}/${entry}`;
+      const stat = statSync(fullPath);
 
-      if (entry.isFile) {
+      if (stat.isFile()) {
         filePaths.push(fullPath);
-      } else if (entry.isDirectory) {
+      } else if (stat.isDirectory()) {
         dirs.push(fullPath);
       }
     }
@@ -29,10 +31,11 @@ export async function scanDir(dirPath: string): Promise<string[]> {
     return [];
   }
 
-  for await (const entry of Deno.readDir(dirPath)) {
-    const entryPath = path.join(dirPath, entry.name);
+  for (const entry of await fs.readdir(dirPath)) {
+    const entryPath = path.join(dirPath, entry);
+    const stat = await fs.stat(entryPath);
 
-    if (entry.isDirectory) {
+    if (stat.isDirectory()) {
       files.push(...(await scanDir(entryPath)));
     } else {
       files.push(entryPath);
@@ -57,15 +60,15 @@ export async function cleanDir(dir: string) {
     return isEmpty;
   }
 
-  for await (const entry of Deno.readDir(dir)) {
-    const fullPath = path.join(dir, entry.name);
+  for (const entry of await fs.readdir(dir)) {
+    const stat = await fs.stat(entry);
 
-    if (entry.isDirectory) {
-      const isSubDirEmpty = await cleanDir(fullPath);
+    if (stat.isDirectory()) {
+      const isSubDirEmpty = await cleanDir(entry);
 
       if (isSubDirEmpty) {
         try {
-          await Deno.remove(fullPath);
+          await fs.rm(entry);
         } catch {}
       } else {
         isEmpty = false;
@@ -78,10 +81,20 @@ export async function cleanDir(dir: string) {
   return isEmpty;
 }
 
-export async function fileWrite(path: string, content: string) {
-  await Deno.writeTextFile(path, content);
+export async function readFile(path: string) {
+  return await Bun.file(path).text();
 }
 
-export async function fileRead(path: string) {
-  return await Deno.readTextFile(path);
+export async function writeFile(path: string, content: string) {
+  await ensureFile(path);
+  await Bun.write(path, content);
+}
+
+export async function ensureFile(file: string) {
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.open(file, 'w');
+}
+
+export async function ensureDir(dir: string) {
+  await fs.mkdir(path.dirname(dir), { recursive: true });
 }

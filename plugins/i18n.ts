@@ -1,12 +1,9 @@
-import '../core/config.ts';
+import '../core/config';
 
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
-// @deno-types="https://cdn.jsdelivr.net/gh/i18next/i18next/index.d.ts"
-import i18next, {
-  InitOptions, TFunction,
-} from 'https://deno.land/x/i18next@v23.2.11/index.js';
-// @deno-types="npm:i18next-fs-backend"
-import Backend, { FsBackendOptions } from 'npm:i18next-fs-backend';
+import i18next, { InitOptions, TFunction } from 'i18next';
+import Backend, { FsBackendOptions } from 'i18next-fs-backend';
+
+import { Sencha, SenchaPlugin } from '../core';
 
 declare module '../core/config.ts' {
   interface RouteContext {

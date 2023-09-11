@@ -1,8 +1,8 @@
-import * as sass from 'npm:sass';
+import fs from 'node:fs/promises';
+import * as sass from 'sass';
 
-import { SenchaPlugin } from '../core/mod.ts';
-import { fs } from '../deps/std.ts';
-import { fileWrite } from '../utils/mod.ts';
+import { SenchaPlugin } from '../core';
+import { writeFile } from '../utils';
 
 export interface SassPluginOptions extends sass.Options<'async'> {}
 
@@ -15,9 +15,9 @@ export default (config: SassPluginOptions = {}) => {
           const mapPath = `${asset.dest}.sass.map`;
 
           if (result.sourceMap) {
-            await fileWrite(mapPath, JSON.stringify(result.sourceMap));
+            await writeFile(mapPath, JSON.stringify(result.sourceMap));
           } else if (await fs.exists(mapPath)) {
-            await Deno.remove(mapPath);
+            await fs.rm(mapPath);
           }
 
           return result.css;

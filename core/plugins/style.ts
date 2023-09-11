@@ -1,7 +1,7 @@
-import '../config.ts';
+import '../config';
 
-import { SenchaPlugin } from '../plugin.ts';
-import { Sencha } from '../sencha.ts';
+import { SenchaPlugin } from '../plugin';
+import { Sencha } from '../sencha';
 
 declare module '../config.ts' {
   interface SenchaContext {

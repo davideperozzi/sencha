@@ -1,3 +1,0 @@
-Deno.test('asset', async () => {
-
-});

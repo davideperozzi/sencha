@@ -1,8 +1,7 @@
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
-import { fileRead, optPromise } from '../utils/mod.ts'
+import nunjucks from 'nunjucks';
 
-// @deno-types="npm:@types/nunjucks@3.2.3"
-import nunjucks from 'npm:nunjucks@3.2.4';
+import { Sencha, SenchaPlugin } from '../core/index.ts';
+import { optPromise, readFile } from '../utils/index.ts';
 
 export interface NunjucksPluginConifg extends nunjucks.ConfigureOptions {}
 
@@ -52,7 +51,7 @@ export default (config: NunjucksPluginConifg = {}) => {
           const route = context.route;
 
           if (route.file.endsWith('.njk')) {
-            const template = await fileRead(route.file);
+            const template = await readFile(route.file);
 
             return await new Promise((resolve, reject) => {
               njkEnv.renderString(template, context, (err: any, res: any) => {

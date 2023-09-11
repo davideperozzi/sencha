@@ -1,10 +1,8 @@
-import {
-  CustomAtRules, transform, TransformOptions,
-} from 'npm:lightningcss@1.21.5';
+import { CustomAtRules, transform, TransformOptions } from 'lightningcss';
+import fs from 'node:fs/promises';
 
-import { fs } from '../deps/std.ts';
-import { SenchaPlugin } from '../mod.ts';
-import { fileRead, fileWrite } from '../utils/mod.ts';
+import { SenchaPlugin } from '../';
+import { readFile, writeFile } from '../utils';
 
 export interface LightningcssPluginConfig<T extends CustomAtRules = any> extends
   Omit<TransformOptions<T>, 'filename' | 'code'> {}
@@ -14,7 +12,7 @@ export default (config: LightningcssPluginConfig = {}) => {
     hooks: {
       assetProcess: async (asset) => {
         if (asset.is('css')) {
-          const content = await fileRead(asset.path);
+          const content = await readFile(asset.path);
           const mapPath = `${asset.dest}.lightningcss.map`;
           const { code, map } = transform({
             code: new TextEncoder().encode(content),
@@ -23,9 +21,9 @@ export default (config: LightningcssPluginConfig = {}) => {
           });
 
           if (map) {
-            fileWrite(mapPath, JSON.stringify(new TextDecoder().decode(map)));
+            writeFile(mapPath, JSON.stringify(new TextDecoder().decode(map)));
           } else if (await fs.exists(mapPath)) {
-            await Deno.remove(mapPath);
+            await fs.rm(mapPath);
           }
 
           return new TextDecoder().decode(code);

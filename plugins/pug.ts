@@ -1,6 +1,6 @@
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
-// @deno-types=npm:@types/pug
-import pug from 'npm:pug';
+import pug from 'pug';
+
+import { Sencha, SenchaPlugin } from '../core';
 
 export interface PugPluginConifg extends pug.Options {
   ignoreAsyncFilterWarning?: boolean;

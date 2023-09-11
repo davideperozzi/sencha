@@ -1,6 +1,8 @@
-import { fs, path } from '../deps/std.ts';
-import logger from '../logger/mod.ts';
-import { cleanUrl, fileWrite } from '../utils/mod.ts';
+import path from 'node:path';
+import { promises as fs } from 'node:fs';
+import logger from '../logger';
+
+import { cleanUrl, ensureDir, writeFile } from '../utils';
 
 export class AssetFile {
   /**
@@ -172,7 +174,7 @@ export class AssetProcessor {
     const children: AssetFile[] = [];
 
     for (const file of files) {
-      if (cache && fs.existsSync(file.dest)) {
+      if (cache && await Bun.file(file.dest).exists()) {
         this.logger.debug(`skipping ${file.path} (cache)`);
         continue;
       }
@@ -180,8 +182,8 @@ export class AssetProcessor {
       const output = await cb(file);
 
       if (typeof output === 'string') {
-        await fs.ensureDir(path.dirname(file.dest));
-        await fileWrite(file.dest, output);
+        await ensureDir(path.dirname(file.dest));
+        await writeFile(file.dest, output);
       }
 
       if (await fs.exists(file.dest) && file.dest !== file.path) {

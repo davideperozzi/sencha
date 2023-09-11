@@ -1,9 +1,11 @@
-import { deepMerge } from '../deps/std.ts';
-import logger from '../logger/mod.ts';
-import { OptPromise, optPromise } from '../utils/promise.ts';
-import { SenchaAction } from './action.ts';
-import { SenchaConfig } from './config.ts';
-import { SenchaPlugin } from './plugin.ts';
+import deepmerge from '@fastify/deepmerge';
+import fs from 'node:fs';
+
+import logger from '../logger';
+import { OptPromise, optPromise } from '../utils/promise';
+import { SenchaAction } from './action';
+import { SenchaConfig } from './config';
+import { SenchaPlugin } from './plugin';
 
 type LoaderAction = (SenchaAction | OptPromise<(sencha: any) => SenchaAction>);
 type LoaderPlugin = (SenchaPlugin | OptPromise<(sencha: any) => SenchaPlugin>);
@@ -15,6 +17,7 @@ export class Loader<T extends SenchaConfig, A> {
   private updateActionsCb?: (actions: SenchaAction[], config: T) => void;
   private loadedActions = new Map<LoaderAction, SenchaAction>();
   private loadedPlugins = new Map<LoaderPlugin, SenchaPlugin>();
+  private deepmerge = deepmerge();
   readonly filters: Record<string, (...args: any[]) => any> = {};
   readonly plugins: SenchaPlugin[] = [];
   readonly actions: SenchaAction[] = [];
@@ -43,6 +46,11 @@ export class Loader<T extends SenchaConfig, A> {
     this.loaded = true;
     this.currentFile = file;
 
+    if( ! await Bun.file(file).exists()) {
+      this.logger.error(`config file ${file} does not exist`);
+      process.exit(1);
+    }
+
     const config = await import('file://' + file);
     const partials = Object.values(config);
     const deferred: (() => Promise<void>)[] = [];
@@ -55,7 +63,7 @@ export class Loader<T extends SenchaConfig, A> {
       this.updateActionsCb = updateActionsCb;
     }
 
-    // load partials separately to esnure the async is not blocking
+    // load partials separately to esnure the async aren't blocking
     // the sync options. This is important for the config override
     // to work properly. After the sync partials have been injected, load
     // the async partials This ensures that the async partials can override
@@ -77,7 +85,7 @@ export class Loader<T extends SenchaConfig, A> {
   }
 
   async update(options: Partial<T>) {
-    this._config = deepMerge<T>(this._config, options);
+    this._config = this.deepmerge(this._config, options) as T;
 
     if (options.plugins) {
       this.plugins.length = 0;

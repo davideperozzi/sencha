@@ -1,7 +1,8 @@
-import { deepMerge } from '../deps/std.ts';
-import logger from '../logger/mod.ts';
-import { isGetRequest, measure, trimUrl, uniqueKey } from '../utils/mod.ts';
-import store from './store.ts';
+import deepmerge from '@fastify/deepmerge';
+
+import logger from '../logger';
+import { isGetRequest, measure, trimUrl, uniqueKey } from '../utils';
+import store from './store';
 
 export type FetchOptions = Partial<FetchConfig<Partial<FetchEndpoint>>>;
 
@@ -46,7 +47,7 @@ export class Fetcher {
   configure(options: FetchOptions) {
     this.logger.debug(`loaded configuration`);
 
-    this.config = deepMerge<any>(this.config, options as FetchConfig);
+    this.config = deepmerge()(this.config, options as FetchConfig);
   }
 
   clear() {

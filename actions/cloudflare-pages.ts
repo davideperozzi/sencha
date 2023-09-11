@@ -1,5 +1,5 @@
-import { SenchaAction } from '../core/action.ts';
-import { Sencha } from '../core/sencha.ts';
+import { SenchaAction } from '../core/action';
+import { Sencha } from '../core/sencha';
 
 interface CloudFlarePagesScriptConfig {
   accountId: string;

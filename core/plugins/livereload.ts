@@ -1,6 +1,6 @@
-import { path } from '../../deps/std.ts';
-import { SenchaPlugin } from '../plugin.ts';
-import { Sencha } from '../sencha.ts';
+import path from 'node:path';
+import { SenchaPlugin } from '../plugin';
+import { Sencha } from '../sencha';
 
 const routePath = '/c2VuY2hhbGl2ZXJlbG9hZAo';
 const reloadScript = /* js */`
@@ -103,26 +103,26 @@ export default (sencha: Sencha) => {
           }));
         }
       },
-      serverUpgrade: (router) =>  {
-        router.get(routePath, (ctx) => {
-          if ( ! ctx.isUpgradable) {
-            ctx.response.body = reloadScript;
+      // serverUpgrade: (router) =>  {
+      //   router.get(routePath, (ctx) => {
+      //     if ( ! ctx.isUpgradable) {
+      //       ctx.response.body = reloadScript;
 
-            return;
-          }
+      //       return;
+      //     }
 
-          const socket = ctx.upgrade();
+      //     const socket = ctx.upgrade();
 
-          socket.onopen = () => sockets.push(socket);
-          socket.onclose = () => {
-            const index = sockets.indexOf(socket);
+      //     socket.onopen = () => sockets.push(socket);
+      //     socket.onclose = () => {
+      //       const index = sockets.indexOf(socket);
 
-            if (index > -1) {
-              sockets.splice(index, 1);
-            }
-          };
-        })
-      },
+      //       if (index > -1) {
+      //         sockets.splice(index, 1);
+      //       }
+      //     };
+      //   })
+      // },
       serverRenderRoute: ({ html }) => {
         return html.replace(
           '</head>',

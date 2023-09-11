@@ -1,12 +1,13 @@
-import { fs, path } from '../deps/std.ts';
-import logger from '../logger/mod.ts';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import logger from '../logger';
 import {
-  batchPromise, cleanDir, fileRead, fileWrite, scanHtmlSync,
-} from '../utils/mod.ts';
-import { BuildResult, RouteContext, SenchaContext } from './config.ts';
-import { PluginManager } from './plugin.ts';
-import { Route, RouteResult } from './route.ts';
-import { SenchaState } from './state.ts';
+  batchPromise, cleanDir, readFile, writeFile, scanHtmlSync, ensureDir,
+} from '../utils';
+import { BuildResult, RouteContext, SenchaContext } from './config';
+import { PluginManager } from './plugin';
+import { Route, RouteResult } from './route';
+import { SenchaState } from './state';
 
 declare module './config.ts' {
   interface RouteContext {
@@ -64,7 +65,7 @@ export class Builder {
           success.push(route.slug);
         }
       });
-    } catch(err) {
+    } catch(err: any) {
       errors.push(err);
       this.logger.error(err);
     }
@@ -118,8 +119,8 @@ export class Builder {
     for (const page of pages || scanHtmlSync(this.config.outDir)) {
       if ( ! files.includes(page) && await fs.exists(page)) {
         promises.push(
-          Deno.remove(page).then(
-            () => Deno.remove(path.dirname(page)),
+          fs.rm(page).then(
+            () => fs.rmdir(path.dirname(page)),
             (err) => this.logger.warn(`failed to remove "${page}": ` + err)
           )
         );
@@ -142,11 +143,11 @@ export class Builder {
   async render(result: RouteResult) {
     const { route, html } = result;
 
-    await fs.ensureDir(path.dirname(route.out));
-    await fileWrite(route.out, html);
+    await ensureDir(path.dirname(route.out));
+    await writeFile(route.out, html || '');
   }
 
   async compile(route: Route): Promise<string> {
-    return await fileRead(route.file);
+    return await readFile(route.file);
   }
 }

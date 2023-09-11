@@ -1,9 +1,8 @@
-import { walk } from 'https://deno.land/std@0.199.0/fs/walk.ts';
-import * as esbuild from 'https://deno.land/x/esbuild@v0.18.5/mod.js';
+import * as esbuild from 'esbuild';
+import path from 'node:path';
 
-import { SenchaPlugin } from '../core/mod.ts';
-import { path } from '../deps/std.ts';
-import { Sencha } from '../mod.ts';
+import { Sencha } from '../';
+import { SenchaPlugin } from '../core';
 
 /**
  * This is the config for the esbuild plugin, which is basically just
@@ -22,34 +21,34 @@ export interface EsbuildPluginConfig extends esbuild.BuildOptions {}
 
 export async function expandEntryPoints(
   entryPoints: EsbuildPluginConfig['entryPoints'],
-  rootDir = Deno.cwd(),
+  rootDir = process.cwd(),
 ) {
-  if (Array.isArray(entryPoints)) {
-    for (const entryPoint of entryPoints) {
-      if (typeof entryPoint === 'string') {
-        const filePaths = [];
-        const globPath = path.isAbsolute(entryPoint)
-          ? entryPoint
-          : path.join(rootDir, entryPoint);
-        const normPath = globPath.replace(/\*.*\..*$/, '');
-        const regexPath = path.globToRegExp(globPath);
+  // if (Array.isArray(entryPoints)) {
+  //   for (const entryPoint of entryPoints) {
+  //     if (typeof entryPoint === 'string') {
+  //       const filePaths = [];
+  //       const globPath = path.isAbsolute(entryPoint)
+  //         ? entryPoint
+  //         : path.join(rootDir, entryPoint);
+  //       const normPath = globPath.replace(/\*.*\..*$/, '');
+  //       const regexPath = path.globToRegExp(globPath);
 
-        if (path.isGlob(entryPoint)) {
-          const files = walk(normPath, { match: [regexPath] });
+  //       if (path.isGlob(entryPoint)) {
+  //         const files = walk(normPath, { match: [regexPath] });
 
-          for await (const file of files) {
-            if (file.isFile) {
-              filePaths.push(file.path);
-            }
-          }
-        } else {
-          filePaths.push(entryPoint);
-        }
+  //         for await (const file of files) {
+  //           if (file.isFile) {
+  //             filePaths.push(file.path);
+  //           }
+  //         }
+  //       } else {
+  //         filePaths.push(entryPoint);
+  //       }
 
-        return filePaths;
-      }
-    }
-  }
+  //       return filePaths;
+  //     }
+  //   }
+  // }
 
   return entryPoints;
 }

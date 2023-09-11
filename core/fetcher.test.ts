@@ -1,11 +1,10 @@
-import {
-  assert, assertEquals, assertFalse, assertObjectMatch, Handler, Server,
-} from '../deps/std.ts';
-import { Fetcher } from './fetcher.ts';
-import store from './store.ts';
+import { describe, expect, test } from 'bun:test';
+
+import { Fetcher } from './fetcher';
+import store from './store';
 
 const host = 'localhost';
-const port = parseInt(Deno.env.get('SENCHA_TEST_PORT') || '8238');
+const port = parseInt(Bun.env.SENCHA_TEST_PORT || '8238');
 const mockJson = {
   "data": {
     "name": "Project 1",
@@ -18,7 +17,7 @@ const routes: Record<string, (req: Request) => Response> = {
   '/': () => new Response(JSON.stringify(mockJson), { status: 200 })
 };
 
-const handler: Handler = (req) => {
+const handler = (req: Request) => {
   const url = new URL(req.url);
 
   if (routes[url.pathname]) {
@@ -28,39 +27,38 @@ const handler: Handler = (req) => {
   return new Response('Not Found', { status: 404 })
 };
 
-Deno.test('fetcher', async () => {
+test('fetcher', async () => {
   const apiUrl = `http://${host}:${port}/`;
-  const server = new Server({ port, hostname: host, handler });
-  const listener = server.listenAndServe();
+  const server = Bun.serve({ port, hostname: host, fetch: handler });
   const fetcher = new Fetcher({
     endpoints: {
       mock: { url: apiUrl }
     }
   });
 
-  assertEquals(fetcher.parseUrl('mock:/').url, apiUrl);
-  assertEquals(fetcher.parseUrl(apiUrl).url, apiUrl);
-  assertEquals(fetcher.parseUrl(`undef:/test`).url, `/test`);
-
-  assertObjectMatch(await fetcher.fetch('mock:/'), mockJson);
-  assertEquals(await fetcher.fetch('mock:/404-route'), undefined);
-  assert(fetcher.isReqCached('mock:/'));
+  expect(fetcher.parseUrl('mock:/').url).toBe(apiUrl);
+  expect(fetcher.parseUrl(apiUrl).url).toBe(apiUrl);
+  expect(fetcher.parseUrl(`undef:/test`).url).toBe(`/test`);
+  expect(await fetcher.fetch('mock:/')).toMatchObject(mockJson);
+  expect(await fetcher.fetch('mock:/404-route')).toBe(undefined);
+  expect(fetcher.isReqCached('mock:/')).toBe(true);
 
   fetcher.clear();
-  assertFalse(fetcher.isReqCached('mock:/'));
+  expect(fetcher.isReqCached('mock:/')).toBe(false);
 
   await fetcher.fetch('mock:/', { store: 'mock' });
-  assertObjectMatch(store.get('mock'), mockJson);
+  expect(store.get('mock')).toMatchObject(mockJson);
 
-  assertObjectMatch(await fetcher.fetch('mock:/404-route', {
+  expect(await fetcher.fetch('mock:/404-route', {
     default: { '404': true },
     store: 'mock'
-  }), { '404': true });
-  assertObjectMatch(store.get('mock'), { '404': true });
+  })).toMatchObject({ '404': true });
+  expect(store.get('mock')).toMatchObject({ '404': true });
 
   const testEndpoint = { url: `http://${host}:${port}/` };
   fetcher.configure({ endpoints: { test: testEndpoint } });
-  assertObjectMatch(fetcher.parseUrl('test:/').endpoint!, testEndpoint);
+
+  expect(fetcher.parseUrl('test:/').endpoint!).toMatchObject(testEndpoint);
 
   let afterFetchCount = 0;;
   let beforeFetchCount = 0;
@@ -80,9 +78,9 @@ Deno.test('fetcher', async () => {
 
   await fetcher.fetch('mock:/', { noCache: true });
   await fetcher.fetch('mock:/', { noCache: true });
-  assertEquals(afterFetchCount, 2);
-  assertEquals(beforeFetchCount, 2);
 
-  server.close();
-  await listener;
+  expect(afterFetchCount).toBe(2);
+  expect(beforeFetchCount).toBe(2);
+
+  server.stop();
 });

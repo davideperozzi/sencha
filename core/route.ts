@@ -1,6 +1,8 @@
-import { fs, path } from '../deps/std.ts';
-import { ArrayMap, cleanUrl, optPromise, scanDir } from '../utils/mod.ts';
-import { RouteConfig } from './config.ts';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
+import { ArrayMap, cleanUrl, optPromise, scanDir } from '../utils';
+import { RouteConfig } from './config';
 
 export type RouteDataEntry = Promise<Record<string, any>> | Record<string, any>;
 export type RouteData = Record<
@@ -153,7 +155,7 @@ export function filterRoutes(routes: Route[], filter: RouteFilter = /.*/) {
 
       if (
         typeof slugFilter === 'string' &&
-        fs.existsSync(slugFilter) &&
+        existsSync(slugFilter) &&
         slugFilter === route.file
       ) {
         return true;

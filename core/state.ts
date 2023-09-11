@@ -1,7 +1,10 @@
-import path from 'https://deno.land/std@0.109.0/node/path.ts';
-import { parse, stringify } from 'npm:@ungap/structured-clone/json';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
-import { fs } from '../deps/std.ts';
+// @ts-ignore
+import { parse, stringify } from '@ungap/structured-clone/json';
+
+import { ensureFile, readFile, writeFile } from '../utils';
 
 export interface SenchaState {
   get<T = unknown>(key: string): Promise<T|null|undefined>;
@@ -24,7 +27,7 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
       }
 
       if (await fs.exists(file)) {
-        const result =  parse(await Deno.readTextFile(file)) as T;
+        const result = parse(await readFile(file)) as T;
 
         return result;
       }
@@ -36,8 +39,8 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
       const data = stringify(value);
 
       memory.set(key, value);
-      await fs.ensureFile(file);
-      await Deno.writeTextFile(file, data, { create: true });
+      await ensureFile(file);
+      await writeFile(file, data);
 
       return value;
     }
