@@ -97,7 +97,7 @@ export class Server {
   }
 
   private async restore() {
-    const routes = await this.sencha.state.get<Route[]>('sencha.serverRoutes');
+    const routes = await this.sencha.state.get<Route[]>('sencha.lastRoutes');
 
     if (routes) {
       this.logger.debug(`restored ${routes.length} routes`);
@@ -110,7 +110,6 @@ export class Server {
 
     this.dynamicRouter = router;
 
-    await this.sencha.state.set('sencha.serverRoutes', routes);
     await this.sencha.pluginHook('serverUpgrade', [router, routes]);
 
     for (const route of routes) {

@@ -20,11 +20,11 @@ export interface Route {
   out: string;
   view: string;
   lang: string;
-  data: Record<string, any>;
-  param: Record<string, any>;
+  data: Record<string, unknown>;
+  param: Record<string, unknown>;
   pretty: boolean;
-  siblings: Route[];
-  localized: Route[];
+  siblings: string[];
+  localized: string[];
 }
 
 export interface RouteResult {
@@ -260,7 +260,7 @@ export async function createRoutesFromFiles(
       const route = createRoute({ lang, slug, file, view, pretty });
 
       if (hasRouteParams(slug)) {
-        const params: any[] = await optPromise(
+        const params: RouteParamsEntry = await optPromise(
           findRouteParams(view, allParams),
           route
         );
@@ -285,19 +285,21 @@ export async function createRoutesFromFiles(
     }
   }
 
-  // @todo: find a better way, this takes way too many resource with many routes
-  //
-  // for (const [_, group] of langGroups) {
-  //   for (const route of group) {
-  //     route.localized = group.filter(sib => sib !== route);
-  //   }
-  // }
+  for (const [_, group] of langGroups) {
+    for (const route of group) {
+      route.localized = group.filter(sib => sib !== route).map(route => {
+        return route.slug;
+      });
+    }
+  }
 
-  // for (const [_, group] of paramGroups) {
-  //   for (const route of group) {
-  //     route.siblings = group.filter(sib => sib !== route);
-  //   }
-  // }
+  for (const [_, group] of paramGroups) {
+    for (const route of group) {
+      route.siblings = group.filter(sib => sib !== route).map(route => {
+        return route.slug;
+      });
+    }
+  }
 
   return routes.map(route => parseRoute(route, outputDir));
 }

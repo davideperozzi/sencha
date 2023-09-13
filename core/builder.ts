@@ -120,7 +120,9 @@ export class Builder {
         promises.push(
           Deno.remove(page).then(
             () => Deno.remove(path.dirname(page)),
-            (err) => this.logger.warn(`failed to remove "${page}": ` + err)
+            (err) => this.logger.warn(
+              `failed to remove "${page}": ` + err.message
+            )
           )
         );
 

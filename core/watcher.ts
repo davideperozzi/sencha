@@ -1,11 +1,12 @@
 import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
 
-import { path } from '../deps/std.ts';
+import { path, debounce } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { AssetFile } from './asset.ts';
 import { BuildResult, SenchaEvents, SenchaStates } from './config.ts';
 import { RouteFilter } from './route.ts';
 import { Sencha } from './sencha.ts';
+import fs from 'https://deno.land/std@0.109.0/node/fs.ts';
 
 export enum WatcherEvents {
   NEEDS_RELOAD = 'needsreload'
@@ -15,6 +16,22 @@ interface ConfigFile {
   file: string;
   cache: string;
 }
+
+function throttle<T extends Array<any>>(
+  fn: (...args: T) => void,
+  wait: number
+) {
+  let isCalled = false;
+
+  return (...args: T) => {
+    if ( ! isCalled) {
+      fn(...args);
+      isCalled = true;
+      setTimeout(() => isCalled = false, wait);
+    }
+  };
+}
+
 
 export class Watcher extends EventEmitter {
   private logger = logger.child('watcher');
@@ -47,24 +64,18 @@ export class Watcher extends EventEmitter {
     this.notifiers.clear();
     this.logger.info('watching ' + this.sencha.dirs.root);
 
+    const build = throttle<[string[], Deno.FsEvent['kind']]>(
+      async (paths, kind) => await this.build(paths, kind),
+      10
+    );
+
     for await (const event of this.watcher) {
-      const dataStr = JSON.stringify(event);
-
-      if (this.notifiers.has(dataStr)) {
-        clearTimeout(this.notifiers.get(dataStr));
-        this.notifiers.delete(dataStr);
+      if (
+        this.fileEvents.includes(event.kind) &&
+        event.paths.find(path => fs.existsSync(path))
+      ) {
+        build(event.paths, event.kind);
       }
-
-      this.notifiers.set(
-        dataStr,
-        setTimeout(async () => {
-          this.notifiers.delete(dataStr);
-
-          if (this.fileEvents.includes(event.kind)) {
-            await this.build(event.paths, event.kind);
-          }
-        }, 20)
-      );
     }
   }
 
