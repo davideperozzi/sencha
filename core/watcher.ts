@@ -1,12 +1,13 @@
+import fs from 'https://deno.land/std@0.109.0/node/fs.ts';
 import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
 
-import { path, debounce } from '../deps/std.ts';
+import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
+import { throttle } from '../utils/async.ts';
 import { AssetFile } from './asset.ts';
 import { BuildResult, SenchaEvents, SenchaStates } from './config.ts';
 import { RouteFilter } from './route.ts';
 import { Sencha } from './sencha.ts';
-import fs from 'https://deno.land/std@0.109.0/node/fs.ts';
 
 export enum WatcherEvents {
   NEEDS_RELOAD = 'needsreload'
@@ -16,22 +17,6 @@ interface ConfigFile {
   file: string;
   cache: string;
 }
-
-function throttle<T extends Array<any>>(
-  fn: (...args: T) => void,
-  wait: number
-) {
-  let isCalled = false;
-
-  return (...args: T) => {
-    if ( ! isCalled) {
-      fn(...args);
-      isCalled = true;
-      setTimeout(() => isCalled = false, wait);
-    }
-  };
-}
-
 
 export class Watcher extends EventEmitter {
   private logger = logger.child('watcher');

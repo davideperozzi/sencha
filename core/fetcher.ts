@@ -39,11 +39,11 @@ export class Fetcher {
 
   constructor(options?: FetchOptions) {
     if (options) {
-      this.configure(options);
+      this.update(options);
     }
   }
 
-  configure(options: FetchOptions) {
+  update(options: FetchOptions) {
     this.logger.debug(`loaded configuration`);
 
     this.config = deepMerge<any>(this.config, options as FetchConfig);

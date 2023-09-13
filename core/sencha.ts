@@ -122,6 +122,7 @@ export class Sencha {
 
   async update(options: SenchaOptions) {
     await this.loader.update(options);
+    this.fetcher.update(this.config.fetch);
     delete this.currentDirs;
   }
 

@@ -1,6 +1,6 @@
 import { deepMerge } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
-import { OptPromise, optPromise } from '../utils/promise.ts';
+import { OptPromise, optPromise } from '../utils/async.ts';
 import { SenchaAction } from './action.ts';
 import { SenchaConfig } from './config.ts';
 import { SenchaPlugin } from './plugin.ts';
