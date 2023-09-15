@@ -874,6 +874,7 @@
       "lightningcss@1.21.0": "lightningcss@1.21.0",
       "lightningcss@1.21.5": "lightningcss@1.21.5",
       "nunjucks-async-loader@2.1.1": "nunjucks-async-loader@2.1.1_nunjucks@3.2.4_chokidar@3.3.1",
+      "nunjucks-async-loader@2.1.2": "nunjucks-async-loader@2.1.2_nunjucks@3.2.4_chokidar@3.3.1",
       "nunjucks@3.2.4": "nunjucks@3.2.4",
       "pug": "pug@3.0.2",
       "sass": "sass@1.64.2",
@@ -1978,6 +1979,13 @@
       },
       "nunjucks-async-loader@2.1.1_nunjucks@3.2.4_chokidar@3.3.1": {
         "integrity": "sha512-39tK22e2kFDki+vg2PXuUJF3IVHKsJKCn2jHn8rAnSqAFf2jY1gGOaV5iaucNf1QiYYVdHyk7Y5oHNUBSvrWvA==",
+        "dependencies": {
+          "chokidar": "chokidar@3.3.1",
+          "nunjucks": "nunjucks@3.2.4_chokidar@3.3.1"
+        }
+      },
+      "nunjucks-async-loader@2.1.2_nunjucks@3.2.4_chokidar@3.3.1": {
+        "integrity": "sha512-6NDY59z47iRuObxWUEWs/Xko1/K+g3daH7MkQ/Pm0ErsrFV6mlfLGziwmQcOmAT0tp6BLJbj+p2SrCuSrPzufg==",
         "dependencies": {
           "chokidar": "chokidar@3.3.1",
           "nunjucks": "nunjucks@3.2.4_chokidar@3.3.1"

@@ -1,8 +1,8 @@
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
-import { fileRead, optPromise } from '../utils/mod.ts'
-
 // @deno-types="npm:@types/nunjucks@3.2.3"
 import nunjucks from 'npm:nunjucks@3.2.4';
+
+import { Sencha, SenchaPlugin } from '../core/mod.ts';
+import { fileRead, optPromise } from '../utils/mod.ts';
 
 export interface NunjucksPluginConifg extends nunjucks.ConfigureOptions {}
 
@@ -17,6 +17,8 @@ function createAsyncFilter(fn: any) {
     }
   };
 }
+
+const AsyncFunction = (async () => {}).constructor;
 
 export default (config: NunjucksPluginConifg = {}) => {
   return (sencha: Sencha) => {
@@ -38,13 +40,17 @@ export default (config: NunjucksPluginConifg = {}) => {
 
           if (sencha.context.filters) {
             for (const key in filters) {
-              njkEnv.addFilter(
-                key,
-                createAsyncFilter((...args: any[]) => {
-                  return optPromise(filters[key], ...args);
-                }),
-                true
-              );
+              if (filters[key] instanceof AsyncFunction) {
+                njkEnv.addFilter(
+                  key,
+                  createAsyncFilter((...args: any[]) => {
+                    return optPromise(filters[key], ...args);
+                  }),
+                  true
+                );
+              } else {
+                njkEnv.addFilter(key, filters[key]);
+              }
             }
           }
         },

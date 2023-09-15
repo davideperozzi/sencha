@@ -31,7 +31,7 @@ export async function optPromise<T>(value: any | Promise<T>, ...args: any[]) {
   return value instanceof Promise ? await value as T : value as T;
 }
 
-export function throttle<T extends Array<any>>(
+export function throttle<T extends Array<unknown>>(
   fn: (...args: T) => void,
   wait: number
 ) {
@@ -42,6 +42,21 @@ export function throttle<T extends Array<any>>(
       fn(...args);
       isCalled = true;
       setTimeout(() => isCalled = false, wait);
+    }
+  };
+}
+
+export function asyncThrottleQueue<T extends Array<unknown>, R = unknown>(
+  fn: (...args: T) => Promise<R>,
+  minWait = 0
+) {
+  let isCalled = false;
+
+  return async (...args: T) => {
+    if ( ! isCalled) {
+      await fn(...args);
+      isCalled = true;
+      setTimeout(() => isCalled = false, minWait);
     }
   };
 }

@@ -3,7 +3,7 @@ import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
 
 import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
-import { throttle } from '../utils/async.ts';
+import { asyncThrottleQueue } from '../utils/async.ts';
 import { AssetFile } from './asset.ts';
 import { BuildResult, SenchaEvents, SenchaStates } from './config.ts';
 import { RouteFilter } from './route.ts';
@@ -25,6 +25,16 @@ export class Watcher extends EventEmitter {
   private state = { result: {} as BuildResult };
   private configFiles: ConfigFile[] = [];
   private watcher?: Deno.FsWatcher;
+  private buildViews = asyncThrottleQueue<[RouteFilter?]>(
+    (views?: RouteFilter) => this.sencha.build(views),
+    10
+  );
+  private processAssets = asyncThrottleQueue<[boolean, AssetFile[]]>(
+    (cache = false, customAssets?: AssetFile[]) => {
+      return this.sencha.processAssets(cache, customAssets);
+    },
+    10
+  );
 
   constructor(
     protected sencha: Sencha
@@ -49,17 +59,12 @@ export class Watcher extends EventEmitter {
     this.notifiers.clear();
     this.logger.info('watching ' + this.sencha.dirs.root);
 
-    const build = throttle<[string[], Deno.FsEvent['kind']]>(
-      async (paths, kind) => await this.build(paths, kind),
-      10
-    );
-
     for await (const event of this.watcher) {
       if (
         this.fileEvents.includes(event.kind) &&
         event.paths.find(path => fs.existsSync(path))
       ) {
-        build(event.paths, event.kind);
+        await this.build(event.paths, event.kind)
       }
     }
   }
@@ -159,13 +164,15 @@ export class Watcher extends EventEmitter {
 
     if (needsRebuild) {
       await this.sencha.pluginHook('watcherRebuild', [paths]);
-      await this.sencha.build();
-    } else if (views.length > 0) {
-      await this.sencha.build(views);
-    }
+      await this.buildViews();
+    } else {
+      if (views.length > 0) {
+        await this.buildViews(views);
+      }
 
-    if (assets.length > 0) {
-      await this.sencha.processAssets(false, assets);
+      if (assets.length > 0) {
+        await this.processAssets(false, assets);
+      }
     }
   }
 }
