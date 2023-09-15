@@ -73,9 +73,9 @@ export default (config: ApiConfig) => (sencha: Sencha) => ({
 
           response.status = result.errors.length > 0 ? 500 : 200;
           response.body = JSON.stringify({
-            success: result.errors.length === 0,
-            routes: result.routes.map(route => route.url),
             timeMs: result.timeMs,
+            success: result.errors.length === 0,
+            routes: result.routes.map(route => route),
             errors: result.errors.map(error => error.toString())
           });
         }

@@ -41,7 +41,7 @@ export default (config: NunjucksPluginConifg = {}) => {
               njkEnv.addFilter(
                 key,
                 createAsyncFilter((...args: any[]) => {
-                  return optPromise(filters[key], args);
+                  return optPromise(filters[key], ...args);
                 }),
                 true
               );
