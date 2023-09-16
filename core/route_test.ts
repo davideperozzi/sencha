@@ -75,6 +75,7 @@ Deno.test('route', async (t) => {
     const locales = ['de', 'en'];
     const routes = await createRoutesFromFiles(
       path.resolve(dirname, '../fixtures/views'),
+      path.resolve(dirname, '../fixtures/dist'),
       {
         pattern: '/:locale/:slug',
         params: {

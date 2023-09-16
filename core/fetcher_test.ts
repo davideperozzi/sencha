@@ -59,13 +59,13 @@ Deno.test('fetcher', async () => {
   assertObjectMatch(store.get('mock'), { '404': true });
 
   const testEndpoint = { url: `http://${host}:${port}/` };
-  fetcher.configure({ endpoints: { test: testEndpoint } });
+  fetcher.update({ endpoints: { test: testEndpoint } });
   assertObjectMatch(fetcher.parseUrl('test:/').endpoint!, testEndpoint);
 
-  let afterFetchCount = 0;;
+  let afterFetchCount = 0;
   let beforeFetchCount = 0;
 
-  fetcher.configure({
+  fetcher.update({
     endpoints: {
       mock: {
         afterFetch: () => {

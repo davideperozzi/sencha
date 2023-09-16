@@ -50,10 +50,11 @@ async function waitForCheck(check: HealthCheck) {
   } = check;
 
   for (let i = 0; i < tries; i++) {
+    const start = performance.now();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-      const start = performance.now();
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       const response = await fetch(url, { method, signal: controller.signal });
       const timeMs = (performance.now() - start).toFixed(2);
 
@@ -69,6 +70,7 @@ async function waitForCheck(check: HealthCheck) {
         return true;
       }
     } catch (error) {
+      clearTimeout(timeout);
       logger.error(`check ${url} failed: ` + (error as any).message);
     }
 

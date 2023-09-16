@@ -852,6 +852,8 @@
     "https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/tokenize-arg-string.js": "7e0875b11795b8e217386e45f14b24a6e501ebbc62e15aa469aa8829d4d0ee61",
     "https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/yargs-parser.js": "453200a7dfbb002e605d8009b7dad30f2b1d93665e046ab89c073a4fe63dfd48",
     "https://deno.land/x/yargs_parser@v20.2.4-deno/deno.ts": "ad53c0c82c3982c4fc5be9472384b259e0a32ce1f7ae0f68de7b2445df5642fc",
+    "https://esm.sh/@ungap/structured-clone@1.2.0/json": "ae72b35ae29c60f4ba7b2be8f9ae937652e94107557ed06f416f5f13dd68f0e4",
+    "https://esm.sh/v132/@ungap/structured-clone@1.2.0/denonext/json.js": "07590f43fd61186c951ae1a66796149f62539ea57c25c9651b6918f6504ef054",
     "https://wilsonl.in/minify-html/deno/0.10.3/index.js": "c8124516a6369ef9293473143d462b1592cf19aa25b110abd27d3cbb40124030"
   },
   "npm": {
