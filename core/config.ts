@@ -18,7 +18,7 @@ export interface BuildResult {
   routes: string[];
   allRoutes: string[];
   assets: AssetFile[];
-  errors: any[];
+  errors: unknown[];
 }
 
 export interface SenchaContext {
@@ -27,9 +27,9 @@ export interface SenchaContext {
   filters: Record<string, SenchaPluginFilter>;
 }
 
-export interface RouteContext {
+export interface RouteContext<T = unknown> {
   sencha: SenchaContext;
-  route: Route;
+  route: Route<T>;
 }
 
 export interface WatcherChangeEvent {

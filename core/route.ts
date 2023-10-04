@@ -13,15 +13,15 @@ export type RouteParams = Record<
   ((route: Route) => RouteParamsEntry) | RouteParamsEntry
 >;
 export type RouteFilter = (string | RegExp)[] | string | RegExp;
-export interface Route {
+export interface Route<T = Record<string, unknown>> {
   url: string;
   file: string;
   slug: string;
   out: string;
   view: string;
   lang: string;
-  data: Record<string, unknown>;
-  param: Record<string, unknown>;
+  data: T;
+  param: Record<string, string>;
   pretty: boolean;
   siblings: string[];
   localized: string[];
@@ -317,11 +317,10 @@ export async function createRoutesFromFiles(
  */
 export async function parseRouteData(routes: Route[], data: RouteData) {
   for (const [key, value] of Object.entries(data)) {
-    if (key !== '__') {
-      routes = routes.filter(route => route.view === key);
-    }
+    const scopedRoutes = key === '__'  ? routes : routes
+      .filter(route => route.view === key);
 
-    for (const route of routes) {
+    for (const route of scopedRoutes) {
       route.data = await optPromise(value, route);
     }
   }

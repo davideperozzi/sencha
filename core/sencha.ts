@@ -1,5 +1,6 @@
 import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
+import { isDevelopment } from '../utils/env.ts';
 import { measure } from '../utils/perf.ts';
 import { ActionManager } from './action.ts';
 import { AssetFile, AssetProcessor } from './asset.ts';
@@ -76,6 +77,14 @@ export class Sencha {
 
   hasStarted() {
     return this.started;
+  }
+
+  isDev() {
+    return isDevelopment();
+  }
+
+  isProd() {
+    return !this.isDev();
   }
 
   get state() {

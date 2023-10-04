@@ -5,24 +5,26 @@ import store from './store.ts';
 
 export type FetchOptions = Partial<FetchConfig<Partial<FetchEndpoint>>>;
 
-export interface FetchEndpoint {
+export interface FetchEndpoint<T = unknown> {
   url: string;
-  afterFetch?: (result: any) => any;
+  afterFetch?: (result: T) => T;
   beforeFetch?: (url: string, init?: FetcherInit) => void | {
     url: string;
-    init?: FetcherInit;
-  };
-}
-export interface FetchConfig<E = FetchEndpoint> {
-  endpoints: {
-    [key: string]: string | E;
+    init?: FetcherInit<T>;
   };
 }
 
-export interface FetcherInit<T = any> extends RequestInit {
+export interface FetchConfig<T = unknown> {
+  endpoints: Record<string, string | FetchEndpoint<T>>;
+}
+
+type FetcherNoFallback<T> = Omit<FetcherInit<T>, 'default'>;
+
+export interface FetcherInit<T = unknown> extends RequestInit {
   store?: string;
   endpoint?: string,
   noCache?: boolean;
+  statusCode?: number;
   default?: T;
 }
 
@@ -33,20 +35,20 @@ export const fetcherDefaultConfig: FetchConfig = {
 export class Fetcher {
   private logger = logger.child('fetch');
   private config = fetcherDefaultConfig;
-  private cache = new Map<string, any>();
+  private cache = new Map<string, unknown>();
   private measure = measure(this.logger);
-  private requests = new Map<string, Promise<any>>();
+  private requests = new Map<string, Promise<unknown>>();
 
-  constructor(options?: FetchOptions) {
+  constructor(options?: FetchConfig) {
     if (options) {
       this.update(options);
     }
   }
 
-  update(options: FetchOptions) {
+  update(options: FetchConfig) {
     this.logger.debug(`loaded configuration`);
 
-    this.config = deepMerge<any>(this.config, options as FetchConfig);
+    this.config = deepMerge<any>(this.config, options);
   }
 
   clear() {
@@ -61,23 +63,24 @@ export class Fetcher {
     ));
   }
 
-  getEndpointUrl(endpoint: string | FetchEndpoint) {
+  getEndpointUrl<T>(endpoint: string | FetchEndpoint<T>) {
     return typeof endpoint === 'string' ? endpoint : (endpoint?.url || '');
   }
 
-  parseEndpoint(endpoint: string | FetchEndpoint) {
+  parseEndpoint<T>(endpoint: string | FetchEndpoint<T>) {
     return typeof endpoint === 'string' ? { url: endpoint } : endpoint;
   }
 
-  parseUrl(url: string, init?: FetcherInit) {
+  parseUrl<T>(url: string, init?: FetcherInit<T>) {
+    const config = this.config as FetchConfig<T>;
     let endpoint = null;
     let newUrl = url;
 
     if (init?.endpoint) {
-      endpoint = this.parseEndpoint(this.config.endpoints[init.endpoint]);
+      endpoint = this.parseEndpoint<T>(config.endpoints[init.endpoint]);
     } else if ( ! url.match(/^https?:\/\//g)) {
       newUrl = url.replace(/^(.*?)\:(.*)$/, (_, api, path) => {
-        endpoint = this.parseEndpoint(this.config.endpoints[api]);
+        endpoint = this.parseEndpoint<T>(config.endpoints[api]);
 
         if ( ! endpoint) {
           this.logger.warn(`endpoint for "${url}" not found`);
@@ -94,8 +97,10 @@ export class Fetcher {
     return { url: newUrl, endpoint };
   }
 
+  async fetch<T>(fullUrl: string, init?: FetcherNoFallback<T>): Promise<T | undefined>;
+  async fetch<T>(fullUrl: string, init?: FetcherInit<T>): Promise<T>;
   async fetch<T>(fullUrl: string, init?: FetcherInit<T>) {
-    let { url, endpoint } = this.parseUrl(fullUrl);
+    let { url, endpoint } = this.parseUrl<T>(fullUrl);
     const reqKey = this.getReqKey(url, init);
 
     if (this.requests.has(reqKey)) {
@@ -124,17 +129,13 @@ export class Fetcher {
       }
     }
 
-    const request = this.request(url, init).catch(err => {
-      this.logger.error(`error from ${fullUrl}: ` + err);
-    });
+    const request = this.request<T>(url, init);
 
     this.requests.set(reqKey, request);
 
-    let result = await request.then(result => {
-      this.requests.delete(reqKey);
+    let result: T | undefined = await request;
 
-      return result;
-    });
+    this.requests.delete(reqKey);
 
     if (endpoint && endpoint.afterFetch && result) {
       const afterResult = endpoint.afterFetch(result);
@@ -163,6 +164,9 @@ export class Fetcher {
     });
   }
 
+
+  private async request<T>(url: string, init?: FetcherNoFallback<T>): Promise<T | undefined>;
+  private async request<T>(url: string, init: FetcherInit<T>): Promise<T>;
   private async request<T>(url: string, init?: FetcherInit<T>) {
     try {
       this.measure.start('request');
@@ -171,7 +175,7 @@ export class Fetcher {
       const response = await fetch(url, init);
       const result = await response.json();
 
-      if (response.status === 200) {
+      if (response.status === init?.statusCode || 200) {
         this.measure.end('request', `${url} (${response.status})`);
 
         if (this.isReqCacheable(init)) {
@@ -180,25 +184,25 @@ export class Fetcher {
         }
 
         if (this.isReqStorable(init)) {
-          store.set(init?.store!, result as any);
+          store.set(init?.store!, result);
         }
 
-        return result;
+        return result as T;
       } else {
         throw new Error(response.statusText);
       }
     } catch(err) {
       if (init?.default) {
         if (this.isReqStorable(init)) {
-          store.set(init?.store!, init.default as any);
+          store.set(init?.store!, init.default);
         }
 
         this.logger.debug(`request failed for ${url} -> loaded default`);
-
-        return init.default;
       } else {
-        throw err;
+        this.logger.error(`error from ${url}: ` + err);
       }
     }
+
+    return init?.default;
   }
 }

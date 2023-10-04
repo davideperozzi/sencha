@@ -147,7 +147,13 @@ export class Watcher extends EventEmitter {
         filePath.startsWith(this.sencha.dirs.layouts) ||
         filePath.startsWith(this.sencha.dirs.includes)
       ) {
-        needsRebuild = true;
+        // since deno caches imports without the option to fully clear
+        // the cache of all modules and it's dependencies, we have to reload
+        // the whole process to clear the cache for now
+        // await this.buildViews();
+
+        this.emit(WatcherEvents.NEEDS_RELOAD);
+        this.logger.debug('config file changed, sending reload event');
         break;
       } else {
         if (filePath.startsWith(this.sencha.dirs.views)) {
@@ -162,10 +168,7 @@ export class Watcher extends EventEmitter {
       }
     }
 
-    if (needsRebuild) {
-      await this.sencha.pluginHook('watcherRebuild', [paths]);
-      await this.buildViews();
-    } else {
+    if ( ! needsRebuild) {
       if (views.length > 0) {
         await this.buildViews(views);
       }

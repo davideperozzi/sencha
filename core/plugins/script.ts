@@ -5,14 +5,8 @@ import { Sencha } from '../sencha.ts';
 
 declare module '../config.ts' {
   interface SenchaContext {
-    script?: (src: string, opts?: ScriptOptions) => string;
+    script?: (src: string) => string;
   }
-}
-
-export interface ScriptOptions {
-  async?: boolean;
-  defer?: boolean;
-  asModule?: boolean;
 }
 
 export default (sencha: Sencha) => ({
@@ -22,18 +16,10 @@ export default (sencha: Sencha) => ({
         return;
       }
 
-      sencha.context.script = (
-        src: string,
-        opts: ScriptOptions = {}
-      ) => {
+      sencha.context.script = (src: string,) => {
         const { url } = sencha.assets.include(src, 'js');
-        const attrs = [`src="${url}"`];
 
-        if (opts.async) attrs.push('async');
-        if (opts.defer) attrs.push('defer');
-        if (opts.asModule) attrs.push('type="module"');
-
-        return `<script ${attrs.join(' ')}></script>`;
+        return url;
       };
     }
   }

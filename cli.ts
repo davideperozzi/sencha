@@ -1,11 +1,13 @@
 while (true) {
   const command = new Deno.Command(Deno.execPath(), {
+    cwd: Deno.cwd(),
     stdout: 'inherit',
     stderr: 'inherit',
     args: [
       'run',
       '-A',
       '-q',
+      `--config=${Deno.cwd()}/deno.json`,
       '--unstable',
       import.meta.resolve('./cli/command.ts'),
       ...Deno.args

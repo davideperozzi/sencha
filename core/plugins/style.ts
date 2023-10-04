@@ -19,7 +19,7 @@ export default (sencha: Sencha) => ({
       sencha.context.style = (src: string) => {
         const { url } = sencha.assets.include(src, 'css');
 
-        return `<link rel="stylesheet" href="${url}" />`;
+        return url;
       };
     }
   }

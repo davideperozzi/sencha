@@ -197,6 +197,12 @@ export class Server {
       await send(ctx, fileUrl, { root: assetPath });
     });
 
+    this.app.use((ctx) => {
+      ctx.response.status = 404;
+      ctx.response.type = "text/html; charset=utf-8";
+      ctx.response.body = "<h1>404, Page not found!</h1>";
+    })
+
     this.logger.info(`Listening on http://${hostname}:${port}`)
     await this.app.listen({
       hostname,

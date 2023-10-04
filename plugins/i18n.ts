@@ -49,9 +49,7 @@ export default (config: I18NPluginConfig = {}) => {
 
     return {
       hooks: {
-        watcherChange: ({ file }) => {
-          return file.startsWith(sencha.path(directory));
-        },
+        watcherChange: ({ file }) => file.startsWith(sencha.path(directory)),
         routeMount: async (context) => {
           const route = context.route;
           const i18n = i18next.createInstance();

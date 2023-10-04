@@ -78,8 +78,9 @@ export async function cleanDir(dir: string) {
   return isEmpty;
 }
 
-export async function fileWrite(path: string, content: string) {
-  await Deno.writeTextFile(path, content);
+export async function fileWrite(file: string, content: string) {
+  await fs.ensureDir(path.dirname(file));
+  await Deno.writeTextFile(file, content);
 }
 
 export async function fileRead(path: string) {

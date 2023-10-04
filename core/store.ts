@@ -1,16 +1,22 @@
-const data = new Map<string, any>();
-const store = {
-  get: (key: string, value?: any) => data.has(key) ? data.get(key) : value,
-  set: (key: string, value: any) => {
-    data.set(key, value);
+const data = new Map<string, unknown>();
+const store = { get, set, put };
 
-    return store;
-  },
-  put: (key: string, value: any) => {
-    data.set(key, value);
+function get<T = unknown>(key: string): T | undefined;
+function get<T = unknown>(key: string, value: T): T;
+function get<T = unknown>(key: string, value?: T): T | undefined {
+    return data.has(key) ? data.get(key) as T : value;
+}
 
-    return value;
-  },
-};
+function set<T = unknown>(key: string, value: T) {
+  data.set(key, value);
+
+  return store;
+}
+
+function put<T = unknown>(key: string, value: T) {
+  data.set(key, value);
+
+  return value;
+}
 
 export default store;

@@ -19,7 +19,8 @@ export class AssetFile {
     public path: string,
     public dest: string,
     public ext?: string,
-    public parent?: AssetFile
+    public parent?: AssetFile,
+    public content?: string
   ) {
     this.dest = this.repl(dest);
   }
