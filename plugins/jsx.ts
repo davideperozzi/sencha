@@ -33,7 +33,7 @@ export default (config: ReactPluginConfig = {}) => {
               default: Layout,
               getStaticProps: getStaticLayoutProps = null
             } = layoutPath
-              ? await import(layoutPath + '#' + Date.now())
+              ? await import('file://' + layoutPath + '#' + Date.now())
               : { default: null };
 
             if (getStaticLayoutProps && ! layoutProps.has(layoutPath)) {
@@ -47,7 +47,7 @@ export default (config: ReactPluginConfig = {}) => {
             const {
               default: Component,
               getStaticProps = null
-            } = await import(route.file + '#' + Date.now());
+            } = await import('file://' + route.file + '#' + Date.now());
 
             if (getStaticProps) {
               props = await optPromise(getStaticProps, context);
