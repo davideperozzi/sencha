@@ -55,7 +55,7 @@ export default (config: ReactPluginConfig = {}) => {
               props = context;
             }
 
-            return render(Layout({
+            return '<!DOCTYPE html>' + render(Layout({
               View: { Component, props },
               context
             }, layoutProps.get(layoutPath)));
