@@ -25,9 +25,13 @@ export default (
         if (config.apiToken) {
           Deno.env.set('CLOUDFLARE_API_TOKEN', config.apiToken);
         }
+
+        if (config.accountId) {
+          Deno.env.set('CLOUDFLARE_ACCOUNT_ID', config.accountId);
+        }
       },
       afterBuild: async () => {
-        const wrangler = await import('npm:wrangler');
+        const wrangler = await import('npm:wrangler@3.65');
         const startTime = performance.now();
 
         logger.debug('deploying to cloudflare pages');

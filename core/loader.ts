@@ -15,6 +15,7 @@ export class Loader<T extends SenchaConfig, A> {
   private updateActionsCb?: (actions: SenchaAction[], config: T) => void;
   private loadedActions = new Map<LoaderAction, SenchaAction>();
   private loadedPlugins = new Map<LoaderPlugin, SenchaPlugin>();
+  private availableActions: LoaderAction[] = [];
   readonly filters: Record<string, (...args: any[]) => any> = {};
   readonly plugins: SenchaPlugin[] = [];
   readonly actions: SenchaAction[] = [];
@@ -86,11 +87,17 @@ export class Loader<T extends SenchaConfig, A> {
       );
     }
 
-    if (options.actions) {
+    if (options.actions || options.useActions) {
+      if (options.actions && options.actions.length > 0) {
+        for (const action of options.actions) {
+          if ( ! this.availableActions.includes(action))  {
+            this.availableActions.push(action);
+          }
+        }
+      }
+
       this.actions.length = 0;
-      this.actions.push(
-        ...await this.updateActions(options.actions)
-      );
+      this.actions.push(...await this.updateActions(this.availableActions));
     }
 
     for (const name in this.filters) {

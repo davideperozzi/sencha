@@ -8,7 +8,6 @@ while (true) {
       '-A',
       '-q',
       `--config=${Deno.cwd()}/deno.json`,
-      '--unstable',
       import.meta.resolve('./cli/command.ts'),
       ...Deno.args
     ]
