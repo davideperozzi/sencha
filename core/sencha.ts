@@ -1,3 +1,4 @@
+import { options } from "npm:preact";
 import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { isDevelopment } from '../utils/env.ts';
@@ -12,7 +13,7 @@ import {
 } from './config.ts';
 import emitter from './emitter.ts';
 import { Fetcher, fetcherDefaultConfig } from './fetcher.ts';
-import { Loader } from './loader.ts';
+import { Loader, LoaderEvent } from './loader.ts';
 import { PluginManager, SenchaPlugin } from './plugin.ts';
 import apiPlugin from './plugins/api.ts';
 import livereloadPlugin from './plugins/livereload.ts';
@@ -25,6 +26,7 @@ import {
 } from './route.ts';
 import { SenchaState } from './state.ts';
 import store from './store.ts';
+import { loadResources } from "https://deno.land/x/i18next@v23.2.11/index.js";
 
 const defaultOptions: SenchaOptions = { fetch: fetcherDefaultConfig };
 
@@ -131,7 +133,6 @@ export class Sencha {
 
   async update(options: SenchaOptions) {
     await this.loader.update(options);
-    this.fetcher.update(this.config.fetch);
     delete this.currentDirs;
   }
 
@@ -141,6 +142,10 @@ export class Sencha {
     }
 
     this.starting = true;
+    
+    this.loader.on(LoaderEvent.UPDATE, () => {
+      this.fetcher.update(this.config.fetch);
+    });
 
     await this.loader.load(this.path(configFile), this.loadPlugins.bind(this));
     delete this.currentDirs;

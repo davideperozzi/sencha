@@ -1,3 +1,4 @@
+import EventEmitter from "https://deno.land/x/events@v1.0.0/mod.ts";
 import { deepMerge } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { OptPromise, optPromise } from '../utils/async.ts';
@@ -8,7 +9,11 @@ import { SenchaPlugin } from './plugin.ts';
 type LoaderAction = (SenchaAction | OptPromise<(sencha: any) => SenchaAction>);
 type LoaderPlugin = (SenchaPlugin | OptPromise<(sencha: any) => SenchaPlugin>);
 
-export class Loader<T extends SenchaConfig, A> {
+export enum LoaderEvent {
+  UPDATE = 'upadate'
+}
+
+export class Loader<T extends SenchaConfig, A> extends EventEmitter {
   private loaded = false;
   private logger = logger.child('loader');
   private updatePluginsCb?: (plugins: SenchaPlugin[], config: T) => void;
@@ -24,7 +29,9 @@ export class Loader<T extends SenchaConfig, A> {
   constructor(
     private _config: T,
     public args: A[]
-  ) {}
+  ) {
+    super();
+  }
 
   get config() {
     return this._config;
@@ -111,6 +118,8 @@ export class Loader<T extends SenchaConfig, A> {
         }
       }
     }
+  
+    this.emit(LoaderEvent.UPDATE);
   }
 
   private async updatePlugins(plugins: LoaderPlugin[]) {

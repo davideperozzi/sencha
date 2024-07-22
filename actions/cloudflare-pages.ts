@@ -38,6 +38,7 @@ export default (
 
         const result = await wrangler.unstable_pages.deploy({
           bundle: false,
+          sourceMaps: false,
           accountId: config.accountId,
           projectName: config.projectName,
           branch: config.branch,
