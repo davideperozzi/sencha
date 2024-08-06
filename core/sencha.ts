@@ -26,7 +26,6 @@ import {
 } from './route.ts';
 import { SenchaState } from './state.ts';
 import store from './store.ts';
-import { loadResources } from "https://deno.land/x/i18next@v23.2.11/index.js";
 
 const defaultOptions: SenchaOptions = { fetch: fetcherDefaultConfig };
 
