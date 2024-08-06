@@ -1,5 +1,6 @@
 import fs from 'https://deno.land/std@0.109.0/node/fs.ts';
 import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
+import { debounce } from "https://deno.land/std@0.215.0/async/debounce.ts";
 
 import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
@@ -59,12 +60,32 @@ export class Watcher extends EventEmitter {
     this.notifiers.clear();
     this.logger.info('watching ' + this.sencha.dirs.root);
 
+    const mods = new Map<string, number>();
+
     for await (const event of this.watcher) {
-      if (
-        this.fileEvents.includes(event.kind) &&
-        event.paths.find(path => fs.existsSync(path))
-      ) {
-        await this.build(event.paths, event.kind)
+      const file = event.paths[0];
+
+      // ignore temp files (osx)
+      if (file.endsWith('~'))  {
+        continue;
+      }
+
+      const exists = fs.existsSync(file);
+      const stat = exists ? await Deno.stat(file) : null;
+      const mtime = stat ? stat.mtime?.getTime() || 0 : 0;
+      const lastMtime = mods.get(file);
+      let valid = true;
+      
+      if (mtime > 0) {
+        if ( ! lastMtime || mtime !== lastMtime) {
+          mods.set(file, mtime);
+        } else if (mtime === mods.get(file)) {
+          valid = false;
+        }
+      }
+
+      if (this.fileEvents.includes(event.kind) && valid) {
+        await this.build(event.paths, event.kind);  
       }
     }
   }
