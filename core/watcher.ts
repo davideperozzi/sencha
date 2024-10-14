@@ -1,6 +1,5 @@
-import fs from 'https://deno.land/std@0.109.0/node/fs.ts';
-import EventEmitter from 'https://deno.land/x/events@v1.0.0/mod.ts';
-import { debounce } from "https://deno.land/std@0.215.0/async/debounce.ts";
+import * as fs from '@std/f2';
+import EventEmitter from 'events/mod.ts';
 
 import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
@@ -66,7 +65,7 @@ export class Watcher extends EventEmitter {
       const file = event.paths[0];
 
       // ignore temp files (osx)
-      if (file.endsWith('~'))  {
+      if (file.endsWith('~') || !file.match(/\.(.*)$/)) {
         continue;
       }
 

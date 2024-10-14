@@ -35,6 +35,15 @@ export interface ServerConfig {
   removeTrailingSlash?: boolean;
 
   /**
+   * Whether to redirect all routes to the default locale.
+   * This is useful if the default locale got enforced
+   * as a slug in the URL. So it redirects / to /en etc.
+   *
+   * @default false
+   */
+  localeRedirect?: boolean;
+
+  /**
    * The port to run the server on
    *
    * @default 8374
@@ -107,6 +116,7 @@ export class Server {
 
   private async update(routes: Route[]) {
     const router = new Router();
+    const defaultLocale = this.sencha.locales[0];
 
     this.dynamicRouter = router;
 
@@ -114,6 +124,10 @@ export class Server {
 
     for (const route of routes) {
       await this.sencha.pluginHook('serverAddRoute', [route]);
+
+      if (this.config.localeRedirect && route.lang === defaultLocale) {
+        router.redirect(route.url.replace(`/${route.lang}`, '') || '/', route.url, 302);
+      }
 
       router.get(route.url, async (context) => {
         await this.route(route, context);
@@ -126,18 +140,6 @@ export class Server {
           await this.route(route, context);
         });
       }
-    }
-
-    const locales = this.sencha.locales;
-    const { hideDefaultLang = true, pattern } = this.sencha.config.route;
-
-    // redirect / to the default language slug in case the default language 
-    // is not hidden from the URL. Otheriwse / would lead to a 404 
-    if (hideDefaultLang === false) {
-      const defaultSlug = transformPathToSlug('/', { lang: locales[0] }, pattern);
-
-      router.redirect('/', defaultSlug, 302);
-      router.redirect('/index.html', defaultSlug, 302);
     }
   }
 
@@ -169,6 +171,23 @@ export class Server {
   }
 
   async start() {
+    // if (this.config.localeRedirect) {
+    //   this.app.use(async (ctx: Context, next: Next) => {
+    //     const { url } = ctx.request;
+    //     const { pattern } = this.sencha.config.route;
+    //     const locales = this.sencha.locales;
+    //
+    //     if (!locales.find(locale => url.pathname.startsWith(`/${locale}`))) {
+    //       url.pathname = transformPathToSlug(url.pathname, { locale: locales[0] }, pattern);
+    //       ctx.response.status = Status.Found;
+    //
+    //       return ctx.response.redirect(url);
+    //     }
+    //
+    //     await next();
+    //   });
+    // }
+
     if (this.config.removeTrailingSlash !== false) {
       this.app.use(removeTrailingSlash);
     }

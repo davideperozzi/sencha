@@ -253,7 +253,7 @@ export async function createRoutesFromFiles(
   const { 
     pattern, 
     params: allParams, 
-    slugMap, 
+    viewMap, 
     hideDefaultLang = true, 
     pretty = true 
   } = config;
@@ -263,13 +263,10 @@ export async function createRoutesFromFiles(
       const langSlug = lang === locales[0] && hideDefaultLang !== false ? '' : lang;
       const relFile = path.relative(inputDir, file);
       const view = cleanUrl(relFile, false, false, true);
-      const slugBase = transformPathToSlug(view, { locale: '' }, pattern);
-      const slug = transformPathToSlug(view, { locale: langSlug }, pattern);
-      const route = createRoute({ lang, slug, file, view, pretty });
-
-      if (slugMap) {
-        route.slug = slugMap(route, context);
-      }
+      const slugRaw = transformPathToSlug(view, { locale: '' }, pattern);
+      const viewPath = viewMap ? await optPromise(viewMap(view, lang, context)) : view;
+      const slug = transformPathToSlug(viewPath, { locale: langSlug }, pattern);
+      const route = createRoute({ lang, slug, slugRaw, file, view, pretty });
 
       if (hasRouteParams(slug)) {
         const params: RouteParamsEntry = await optPromise(
@@ -279,24 +276,20 @@ export async function createRoutesFromFiles(
 
         if (params && params.length > 0) {
           for (const param of params) {
-            const slugBaseParam = parseRouteParam(slugBase, param);
+            const slugRawParam = parseRouteParam(slugRaw, param);
             const paramRoute = createRoute({
               param,
               slug: parseRouteParam(slug, param),
             }, route);
 
-            if (slugMap) {
-              paramRoute.slug = slugMap(paramRoute, context);
-            }
-
             routes.push(paramRoute);
-            langGroups.push(slugBaseParam, paramRoute);
+            langGroups.push(slugRawParam, paramRoute);
             paramGroups.push(slug, paramRoute);
           }
         }
       } else {
         routes.push(route);
-        langGroups.push(slugBase, route);
+        langGroups.push(slugRaw, route);
       }
     }
   }

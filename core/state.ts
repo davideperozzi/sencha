@@ -1,5 +1,5 @@
-import path from 'https://deno.land/std@0.109.0/node/path.ts';
-import { parse, stringify } from 'https://esm.sh/@ungap/structured-clone@1.2.0/json';
+import * as path from '@std/path';
+import { parse, stringify } from '@ungap/structured-clone/json';
 
 import { fs } from '../deps/std.ts';
 

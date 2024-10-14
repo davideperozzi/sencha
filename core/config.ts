@@ -1,16 +1,13 @@
-import {
-  deepMerge,
-} from 'https://deno.land/std@0.201.0/collections/deep_merge.ts';
-
-import { isDevelopment, OptPromise } from '../utils/mod.ts';
-import { SenchaAction } from './action.ts';
-import { AssetFile } from './asset.ts';
-import { FetchConfig, Fetcher } from './fetcher.ts';
-import { HealthCheck } from './health.ts';
-import { SenchaPlugin, SenchaPluginFilter } from './plugin.ts';
-import { Route, RouteData, RouteParams } from './route.ts';
+import { deepMerge } from '@std/collection2';
+import { isDevelopment, type OptPromise } from '../utils/mod.ts';
+import type { SenchaAction } from './action.ts';
+import type { AssetFile } from './asset.ts';
+import type { FetchConfig, Fetcher } from './fetcher.ts';
+import type { HealthCheck } from './health.ts';
+import type { SenchaPlugin, SenchaPluginFilter } from './plugin.ts';
+import type { Route, RouteData, RouteParams } from './route.ts';
 import { denoFileState, SenchaState } from './state.ts';
-import store from './store.ts';
+import type store from './store.ts';
 
 export interface BuildResult {
   cache: boolean;
@@ -37,7 +34,7 @@ export interface WatcherChangeEvent {
   type: Deno.FsEvent
 }
 
-export type BuildHook = (result: BuildResult) => void;
+export type BuildHook = (result: BuildResult, context: SenchaContext) => void;
 export interface HooksConfig {
   senchaInit?: OptPromise<() => void>;
   configParse?: OptPromise<(config: SenchaConfig) => void>;
@@ -58,12 +55,12 @@ export interface HooksConfig {
   watcherRebuild?: OptPromise<(events: WatcherChangeEvent[]) => void>;
 }
 
-export type RouteSlugMap = (route: Route, ctx: SenchaContext) => string;
+export type RouteViewMap = OptPromise<(view: string, lang: string, ctx: SenchaContext) => string>;
 export interface RouteConfig {
   pattern?: string;
   pretty?: boolean;
   params?: RouteParams;
-  slugMap?: RouteSlugMap,
+  viewMap?: RouteViewMap,
   data?: RouteData;
   hideDefaultLang?: boolean,
 }

@@ -217,7 +217,7 @@ export class Sencha {
 
     perfTime.start('build');
     await this.runAction('beforeBuild', [result]);
-    await this.pluginHook('buildInit', [result]);
+    await this.pluginHook('buildInit', [result, this.context]);
 
     perfTime.start('parse-routes');
     const { routes: allRoutes, removedRoutes } = await this.parseRoutes();
@@ -239,7 +239,7 @@ export class Sencha {
     result.allRoutes = allRoutes.map((route) => route.slug);
 
     this.emitter.emit(SenchaEvents.BUILD_START, result);
-    await this.pluginHook('buildStart', [result]);
+    await this.pluginHook('buildStart', [result, this.context]);
 
     /** 1. Build routes */
     perfTime.start('routes');
@@ -269,8 +269,8 @@ export class Sencha {
     result.timeMs = timeMs;
 
     this.logger.debug('finalizing build and calling hooks');
-    await this.pluginHook(failed ? 'buildFail' : 'buildSuccess', [result]);
-    await this.pluginHook('buildDone', [result]);
+    await this.pluginHook(failed ? 'buildFail' : 'buildSuccess', [result, this.context]);
+    await this.pluginHook('buildDone', [result, this.context]);
 
     result.timeMs += perfTime.end('done');
 
@@ -306,8 +306,9 @@ export class Sencha {
       this.dirs.views,
       this.dirs.out,
       routeConfig,
-      this.locales
-    );
+      this.locales,
+      this.context
+    ); 
 
     if (routeConfig.data) {
       await parseRouteData(routes, routeConfig.data);

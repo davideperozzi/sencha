@@ -1,4 +1,4 @@
-import EventEmitter from "https://deno.land/x/events@v1.0.0/mod.ts";
+import EventEmitter from "events/mod.ts";
 import { deepMerge } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { OptPromise, optPromise } from '../utils/async.ts';

@@ -1,5 +1,5 @@
-import { Plugin } from 'https://deno.land/x/postcss@8.4.16/lib/postcss.d.ts';
-import postcss from 'https://deno.land/x/postcss@8.4.16/mod.js';
+import { Plugin } from 'postcss/lib/postcss.d.ts';
+import postcss from 'postcss/mod.js';
 
 import { SenchaPlugin } from '../core/mod.ts';
 import { fileRead } from '../utils/mod.ts';

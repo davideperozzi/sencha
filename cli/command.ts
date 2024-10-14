@@ -1,5 +1,4 @@
-import { Command } from 'https://deno.land/x/cliffy@v1.0.0-rc.7/command/mod.ts';
-
+import { Command } from '@cliffy/command';
 import { Sencha, Server, Watcher, WatcherEvents } from '../core/mod.ts';
 import logger, { LogLevel } from '../logger/mod.ts';
 
@@ -71,6 +70,11 @@ const command = new Command()
     { default: true, depends: ['serve'] }
   )
   .option(
+    '--serve-redirect-locales [serveRedirectLocales:boolean]',
+    'Redirects non locale URLS to the default locale',
+    { default: false, depends: ['serve'] }
+  )
+  .option(
     '--watch [watch:boolean]',
     'Start watcher for local development. Note: Sets logLevel to debug',
     { default: false }
@@ -101,6 +105,7 @@ const command = new Command()
     serveHost,
     servePort,
     serveNoTrailingSlash,
+    serveRedirectLocales,
     logLevel,
     dev,
     logFilter,
@@ -109,7 +114,7 @@ const command = new Command()
     noApi,
     serve,
     watch
-  }) => {
+  }: any) => {
     if (dev) {
       watch = true;
       serve = true;
@@ -139,7 +144,8 @@ const command = new Command()
       server = new Server(sencha, {
         host: serveHost,
         port: servePort,
-        removeTrailingSlash: serveNoTrailingSlash
+        removeTrailingSlash: serveNoTrailingSlash,
+        localeRedirect: serveRedirectLocales
       });
 
       serverProc = server.start();
@@ -165,11 +171,16 @@ const command = new Command()
           server.stop();
         }
 
-        Promise.all([ watcherProc, serverProc ]).then(() => {
-          cliLogger.debug('watcher needs reload, leaving process with 243');
-          sencha.runAction('afterRun');
-          Deno.exit(243);
-        });
+        cliLogger.debug('watcher needs reload, leaving process with 243');
+        sencha.runAction('afterRun');
+        Deno.exit(243);
+
+        // todo: fix Top-level await promise never resolved error
+        // Promise.all([ watcherProc, serverProc ]).then(() => {
+        //   cliLogger.debug('watcher needs reload, leaving process with 243');
+        //   sencha.runAction('afterRun');
+        //   Deno.exit(243);
+        // });
       });
     }
 

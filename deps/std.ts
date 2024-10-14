@@ -1,7 +1,7 @@
-export * from 'https://deno.land/std@0.224.0/assert/mod.ts';
-export { debounce } from 'https://deno.land/std@0.224.0/async/debounce.ts';
-export { deepMerge } from 'https://deno.land/std@0.224.0/collections/deep_merge.ts';
-export * as fs from 'https://deno.land/std@0.224.0/fs/mod.ts';
-export * from 'https://deno.land/std@0.224.0/http/server.ts';
-export * as path from 'https://deno.land/std@0.224.0/path/mod.ts';
+export * from '@std/assert';
+export { debounce } from '@std/asyn2/debounce';
+export { deepMerge } from '@std/collection2';
+export * as fs from '@std/f2';
+export * from '@std/http/server';
+export * as path from '@std/path';
 

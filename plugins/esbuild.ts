@@ -1,5 +1,5 @@
-import { walk } from 'https://deno.land/std@0.199.0/fs/walk.ts';
-import * as esbuild from 'https://deno.land/x/esbuild@v0.18.5/mod.js';
+import { walk } from '@std/fs/walk';
+import * as esbuild from 'esbuild/mod.js';
 
 import { SenchaPlugin } from '../core/mod.ts';
 import { path } from '../deps/std.ts';

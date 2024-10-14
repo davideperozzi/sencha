@@ -66,7 +66,7 @@ export class Builder {
         }
       });
     } catch(err) {
-      errors.push(err);
+      errors.push(err as any);
       this.logger.error(err);
     }
 
