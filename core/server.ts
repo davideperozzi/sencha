@@ -5,7 +5,7 @@ import { fs, path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { OptPromise } from '../utils/mod.ts';
 import { SenchaEvents } from './config.ts';
-import { Route } from './route.ts';
+import { Route, transformPathToSlug } from './route.ts';
 import { Sencha } from './sencha.ts';
 
 declare module './config.ts' {
@@ -119,13 +119,25 @@ export class Server {
         await this.route(route, context);
       });
 
-      // set addition route if prettified urls aren't activated this
+      // set additional route if prettified urls aren't activated this
       // will prevent that the root is only accessible via /index.html
       if (route.slug === '/' && ! route.pretty) {
         router.get('/', async (context) => {
           await this.route(route, context);
         });
       }
+    }
+
+    const locales = this.sencha.locales;
+    const { hideDefaultLang = true, pattern } = this.sencha.config.route;
+
+    // redirect / to the default language slug in case the default language 
+    // is not hidden from the URL. Otheriwse / would lead to a 404 
+    if (hideDefaultLang === false) {
+      const defaultSlug = transformPathToSlug('/', { lang: locales[0] }, pattern);
+
+      router.redirect('/', defaultSlug, 302);
+      router.redirect('/index.html', defaultSlug, 302);
     }
   }
 

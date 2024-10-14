@@ -1,10 +1,8 @@
 import '../core/config.ts';
 
 import { Sencha, SenchaPlugin } from '../core/mod.ts';
-// @deno-types="https://cdn.jsdelivr.net/gh/i18next/i18next/index.d.ts"
-import i18next, {
-  InitOptions, TFunction,
-} from 'https://deno.land/x/i18next@v23.2.11/index.js';
+// @deno-types="https://cdn.jsdelivr.net/gh/i18next/i18next@v23.2.11/index.d.ts"
+import i18next, { InitOptions, TFunction } from 'https://deno.land/x/i18next@v23.16.0/index.js';
 // @deno-types="npm:i18next-fs-backend"
 import Backend, { FsBackendOptions } from 'npm:i18next-fs-backend';
 

@@ -1,4 +1,3 @@
-import { options } from "npm:preact";
 import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { isDevelopment } from '../utils/env.ts';
@@ -26,6 +25,7 @@ import {
 } from './route.ts';
 import { SenchaState } from './state.ts';
 import store from './store.ts';
+import { healthCheck } from "./health.ts";
 
 const defaultOptions: SenchaOptions = { fetch: fetcherDefaultConfig };
 
@@ -82,6 +82,10 @@ export class Sencha {
 
   isDev() {
     return isDevelopment();
+  }
+
+  health() {
+    return healthCheck(this.config.health || []); 
   }
 
   isProd() {

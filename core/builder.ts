@@ -10,8 +10,8 @@ import { Route, RouteResult } from './route.ts';
 import { SenchaState } from './state.ts';
 
 declare module './config.ts' {
-  interface RouteContext {
-    route: Route;
+  interface RouteContext<T = unknown> {
+    route: Route<T>;
   }
 }
 

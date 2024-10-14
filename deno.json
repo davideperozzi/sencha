@@ -8,6 +8,7 @@
     "cov:html": "genhtml -o .coverage/html .coverage/coverage.lcov",
     "cov:serve": "http-server -o -c-1 .coverage/html"
   },
+  "nodeModulesDir": "auto",
   "lint": {
     "rules": {
       "exclude": ["no-explicit-any"]

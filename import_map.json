@@ -1,7 +1,7 @@
 {
   "imports": {
-    "std/": "https://deno.land/std@0.192.0/",
-    "oak/": "https://deno.land/x/oak@v12.5.0/",
+    "std/": "https://deno.land/std@0.224.0/",
+    "oak/": "https://deno.land/x/oak@v17.1.0/",
     "#logger": "./logger/mod.ts",
     "#plugins": "./plugins/mod.ts",
     "#core": "./core/mod.ts",

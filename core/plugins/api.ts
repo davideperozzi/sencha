@@ -76,7 +76,7 @@ export default (config: ApiConfig) => (sencha: Sencha) => ({
             timeMs: result.timeMs,
             success: result.errors.length === 0,
             routes: result.routes.map(route => route),
-            errors: result.errors.map(error => error.toString())
+            errors: result.errors.map(error => (error as any).toString())
           });
         }
       );

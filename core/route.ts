@@ -1,5 +1,6 @@
 import { fs, path } from '../deps/std.ts';
 import { ArrayMap, cleanUrl, optPromise, scanDir } from '../utils/mod.ts';
+import { SenchaContext } from "./config.ts";
 import { RouteConfig } from './config.ts';
 
 export type RouteDataEntry = Promise<Record<string, any>> | Record<string, any>;
@@ -243,21 +244,32 @@ export async function createRoutesFromFiles(
   outputDir: string,
   config: RouteConfig,
   locales: string[] = [],
+  context: SenchaContext
 ) {
   const routes: Route[] = [];
   const viewFiles = await scanDir(inputDir);
   const langGroups = new ArrayMap<string, Route>();
   const paramGroups = new ArrayMap<string, Route>();
-  const { pattern, params: allParams, pretty = true } = config;
+  const { 
+    pattern, 
+    params: allParams, 
+    slugMap, 
+    hideDefaultLang = true, 
+    pretty = true 
+  } = config;
 
   for (const lang of locales) {
     for (const file of viewFiles) {
-      const langSlug = lang === locales[0] ? '' : lang;
+      const langSlug = lang === locales[0] && hideDefaultLang !== false ? '' : lang;
       const relFile = path.relative(inputDir, file);
       const view = cleanUrl(relFile, false, false, true);
       const slugBase = transformPathToSlug(view, { locale: '' }, pattern);
       const slug = transformPathToSlug(view, { locale: langSlug }, pattern);
       const route = createRoute({ lang, slug, file, view, pretty });
+
+      if (slugMap) {
+        route.slug = slugMap(route, context);
+      }
 
       if (hasRouteParams(slug)) {
         const params: RouteParamsEntry = await optPromise(
@@ -272,6 +284,10 @@ export async function createRoutesFromFiles(
               param,
               slug: parseRouteParam(slug, param),
             }, route);
+
+            if (slugMap) {
+              paramRoute.slug = slugMap(paramRoute, context);
+            }
 
             routes.push(paramRoute);
             langGroups.push(slugBaseParam, paramRoute);

@@ -1,4 +1,4 @@
-import { Command } from 'https://deno.land/x/cliffy@v1.0.0-rc.2/command/mod.ts';
+import { Command } from 'https://deno.land/x/cliffy@v1.0.0-rc.7/command/mod.ts';
 
 import { Sencha, Server, Watcher, WatcherEvents } from '../core/mod.ts';
 import logger, { LogLevel } from '../logger/mod.ts';

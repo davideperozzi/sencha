@@ -58,11 +58,14 @@ export interface HooksConfig {
   watcherRebuild?: OptPromise<(events: WatcherChangeEvent[]) => void>;
 }
 
+export type RouteSlugMap = (route: Route, ctx: SenchaContext) => string;
 export interface RouteConfig {
   pattern?: string;
   pretty?: boolean;
   params?: RouteParams;
+  slugMap?: RouteSlugMap,
   data?: RouteData;
+  hideDefaultLang?: boolean,
 }
 
 export type SenchaOptions = Partial<SenchaConfig>;
