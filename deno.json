@@ -1,10 +1,11 @@
 {
   "name": "@sencha/core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "license": "MIT",
   "exports": {
     ".": "./mod.ts",
-    "./cli": "./cli.ts"
+    "./cli": "./cli.ts",
+    "./utils": "./utils/mod.ts"
   },
   "tasks": {
     "compile": "deno compile --unstable --allow-read --allow-write --allow-net --allow-env --allow-run --target=x86_64-unknown-linux-gnu --output=bin/main mod.ts",
