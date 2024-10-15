@@ -8,6 +8,7 @@ async function run() {
         'run',
         '-A',
         '-q',
+        '-c', './deno.json',
         import.meta.resolve('./cli/command.ts'),
         ...Deno.args
       ]
