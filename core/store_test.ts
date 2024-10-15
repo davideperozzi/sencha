@@ -1,4 +1,4 @@
-import { assertEquals } from '../deps/std.ts';
+import { assertEquals } from '@std/assert';
 import store from './store.ts';
 
 Deno.test('store', () => {

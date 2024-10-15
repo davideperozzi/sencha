@@ -1,4 +1,5 @@
-import { fs, path } from '../deps/std.ts';
+import * as fs from '@std/fs';
+import * as path from '@std/path';
 import logger from '../logger/mod.ts';
 import { cleanUrl, fileWrite } from '../utils/mod.ts';
 

@@ -1,4 +1,5 @@
-import { fs, path } from '../deps/std.ts';
+import * as path from '@std/path';
+import * as fs from '@std/fs';
 import { ArrayMap, cleanUrl, optPromise, scanDir } from '../utils/mod.ts';
 import { SenchaContext } from "./config.ts";
 import { RouteConfig } from './config.ts';

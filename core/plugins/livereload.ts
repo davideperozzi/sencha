@@ -1,4 +1,4 @@
-import { path } from '../../deps/std.ts';
+import * as path from '@std/path';
 import { SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
 

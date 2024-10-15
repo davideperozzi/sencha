@@ -1,9 +1,11 @@
-import { assertEquals, assertNotEquals, path } from '../deps/std.ts';
+import { assertEquals, assertNotEquals } from '@std/assert';
+import * as path from '@std/path';
 
 import {
   createRoutesFromFiles, filterRoutes, findRouteParams, hasRouteParams, parseRouteParam,
   transformPathToSlug,
 } from './route.ts';
+import type { SenchaContext } from "./config.ts";
 
 const dirname = new URL('.', import.meta.url).pathname;
 
@@ -75,6 +77,7 @@ Deno.test('route', async (t) => {
     const locales = ['de', 'en'];
     const routes = await createRoutesFromFiles(
       path.resolve(dirname, '../fixtures/views'),
+      path.resolve(dirname, './dist'),
       {
         pattern: '/:locale/:slug',
         params: {
@@ -82,7 +85,8 @@ Deno.test('route', async (t) => {
           'posts/[year]/[post]': posts
         }
       },
-      locales
+      locales, 
+      {} as SenchaContext
     );
 
     assertEquals(

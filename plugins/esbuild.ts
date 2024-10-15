@@ -1,10 +1,9 @@
 import { walk } from '@std/fs/walk';
 import * as esbuild from 'esbuild';
+import * as path from '@std/path';
 
 import { SenchaPlugin } from '../core/mod.ts';
-import { path } from '../deps/std.ts';
 import { Sencha } from '../mod.ts';
-
 /**
  * This is the config for the esbuild plugin, which is basically just
  * a child of the esbuild `BuildOptions` interface. There are two modes.

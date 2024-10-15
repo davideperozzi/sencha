@@ -1,4 +1,5 @@
-import { fs, path } from '../deps/std.ts';
+import * as fs from '@std/fs';
+import * as path from '@std/path';
 
 export function scanDirSync(dirPath: string): string[] {
   const filePaths: string[] = [];

@@ -1,4 +1,4 @@
-import { deepMerge } from '../deps/std.ts';
+import { deepMerge } from '@std/collection2';
 import logger from '../logger/mod.ts';
 import { isGetRequest, measure, trimUrl, uniqueKey } from '../utils/mod.ts';
 import store from './store.ts';

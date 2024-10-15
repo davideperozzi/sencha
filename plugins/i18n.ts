@@ -2,7 +2,7 @@ import '../core/config.ts';
 
 import { Sencha, SenchaPlugin } from '../core/mod.ts';
 import i18next, { InitOptions, TFunction } from 'i18next';
-import Backend, { FsBackendOptions } from 'npm:i18next-fs-backend@2.3.2';
+import Backend from 'npm:i18next-fs-backend@2.3.2';
 
 declare module '../core/config.ts' {
   interface RouteContext {

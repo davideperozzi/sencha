@@ -1,6 +1,6 @@
 import '../config.ts';
 
-import { Router } from '../../deps/oak.ts';
+import { Router } from '@oak/oak';
 import { safeCompare } from '../../utils/security.ts';
 import { SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';

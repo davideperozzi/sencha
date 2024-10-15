@@ -1,7 +1,7 @@
 import * as fs from '@std/f2';
 import { EventEmitter } from 'eventemitter';
 
-import { path } from '../deps/std.ts';
+import * as path from '@std/path';
 import logger from '../logger/mod.ts';
 import { asyncThrottleQueue } from '../utils/async.ts';
 import { AssetFile } from './asset.ts';

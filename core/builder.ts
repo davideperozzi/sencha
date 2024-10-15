@@ -1,4 +1,5 @@
-import { fs, path } from '../deps/std.ts';
+import * as path from '@std/path';
+import * as fs from '@std/fs';
 import logger from '../logger/mod.ts';
 import {
   batchPromise,

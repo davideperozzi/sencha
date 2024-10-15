@@ -1,4 +1,5 @@
-import { Server, assertEquals } from '../deps/std.ts';
+import { assertEquals } from '@std/assert';
+import { Server } from '@std/http';
 import { healthCheck } from './health.ts';
 
 const host = 'localhost';

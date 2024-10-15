@@ -1,6 +1,7 @@
 import {
   assert, assertEquals, assertFalse, assertObjectMatch, Handler, Server,
-} from '../deps/std.ts';
+} from '@std/assert';
+
 import { Fetcher } from './fetcher.ts';
 import store from './store.ts';
 

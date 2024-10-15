@@ -2,10 +2,10 @@
 //   CustomAtRules, transform, TransformOptions,
 // } from 'npm:lightningcss@1.21.5';
 
-import { fs } from '../deps/std.ts';
-import { SenchaPlugin } from '../mod.ts';
-import { fileRead, fileWrite } from '../utils/mod.ts';
-
+// import { fs } from '../deps/std.ts';
+// import { SenchaPlugin } from '../mod.ts';
+// import { fileRead, fileWrite } from '../utils/mod.ts';
+//
 // export interface LightningcssPluginConfig<T extends CustomAtRules = any> extends
 //   Omit<TransformOptions<T>, 'filename' | 'code'> {}
 

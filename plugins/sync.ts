@@ -1,4 +1,5 @@
-import { fs, path } from '../deps/std.ts';
+import * as fs from '@std/fs';
+import * as path from '@std/path';
 import { Sencha, SenchaPlugin } from '../core/mod.ts';
 import { scanDir } from '../utils/mod.ts';
 

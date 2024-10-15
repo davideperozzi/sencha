@@ -1,4 +1,4 @@
-import { path } from '../deps/std.ts';
+import * as path from '@std/path';
 import logger from '../logger/mod.ts';
 import { isDevelopment } from '../utils/env.ts';
 import { measure } from '../utils/perf.ts';

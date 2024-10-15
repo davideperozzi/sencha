@@ -1,7 +1,6 @@
 import * as path from '@std/path';
+import * as fs from '@std/fs';
 import { parse, stringify } from '@ungap/structured-clone/json';
-
-import { fs } from '../deps/std.ts';
 
 export interface SenchaState {
   get<T = unknown>(key: string): Promise<T|null|undefined>;

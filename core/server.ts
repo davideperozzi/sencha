@@ -1,11 +1,12 @@
 import {
   Application, Context, Next, Request, Router, send, Status,
-} from '../deps/oak.ts';
-import { fs, path } from '../deps/std.ts';
+} from '@oak/oak';
+import * as fs from '@std/fs';
+import * as path from '@std/path';
 import logger from '../logger/mod.ts';
 import { OptPromise } from '../utils/mod.ts';
 import { SenchaEvents } from './config.ts';
-import { Route, transformPathToSlug } from './route.ts';
+import { Route } from './route.ts';
 import { Sencha } from './sencha.ts';
 
 declare module './config.ts' {

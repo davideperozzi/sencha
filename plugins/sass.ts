@@ -1,7 +1,7 @@
 import * as sass from 'npm:sass@1.77.8';
 
 import { SenchaPlugin } from '../core/mod.ts';
-import { fs } from '../deps/std.ts';
+import * as fs from '@std/fs';
 import { fileWrite } from '../utils/mod.ts';
 
 export interface SassPluginOptions extends sass.Options<'async'> {}
