@@ -1,19 +1,10 @@
-import { FunctionalComponent } from 'npm:preact@10.23.1';
 import { render } from 'npm:preact-render-to-string@6.5.7';
 
-import { RouteContext, Sencha, SenchaPlugin } from '../core/mod.ts';
+import { Sencha, SenchaPlugin } from '../core/mod.ts';
 import { optPromise } from '../utils/async.ts';
 
 export interface ReactPluginConfig {
   layout?: string;
-}
-
-export interface SenchaReactLayoutProps<P = unknown> {
-  context: RouteContext;
-  View: {
-    Component: FunctionalComponent;
-    props: P;
-  }
 }
 
 export default (config: ReactPluginConfig = {}) => {

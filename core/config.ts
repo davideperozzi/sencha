@@ -1,4 +1,5 @@
 import { deepMerge } from '@std/collection2';
+import { FunctionalComponent } from 'npm:preact@10.23.1';
 import { Router as OakRouter, Request as OakRequest } from '@oak/oak';
 import { isDevelopment, type OptPromise } from '../utils/mod.ts';
 import type { SenchaAction } from './action.ts';
@@ -28,6 +29,7 @@ export interface SenchaContext {
   // remove, once  global type augmentation is supported by jsr.io
   style?: (src: string) => string;
   script?: (src: string) => string;
+  i18n?: typeof i18next;
 }
 
 export interface RouteContext<T = unknown> {
@@ -120,6 +122,14 @@ export interface SenchaConfig
 
 export interface SenchaStartConfig {
   configFile?: string;
+}
+
+export interface SenchaReactLayoutProps<P = Record<string, any>> {
+  context: RouteContext;
+  View: {
+    Component: FunctionalComponent;
+    props: P;
+  }
 }
 
 export enum SenchaEvents {
