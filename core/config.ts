@@ -1,5 +1,5 @@
 import { deepMerge } from '@std/collection2';
-import { Router as OakRouter } from '@oak/oak';
+import { Router as OakRouter, Request as OakRequest } from '@oak/oak';
 import { isDevelopment, type OptPromise } from '../utils/mod.ts';
 import type { SenchaAction } from './action.ts';
 import type { AssetFile } from './asset.ts';
@@ -9,7 +9,6 @@ import type { SenchaPlugin, SenchaPluginFilter } from './plugin.ts';
 import type { Route, RouteData, RouteParams } from './route.ts';
 import { denoFileState, SenchaState } from './state.ts';
 import type store from './store.ts';
-
 import i18next, { TFunction } from 'i18next';
 
 export interface BuildResult {
@@ -29,24 +28,20 @@ export interface SenchaContext {
   // remove, once  global type augmentation is supported by jsr.io
   style?: (src: string) => string;
   script?: (src: string) => string;
-  i18n?: typeof i18next;
-  __?: TFunction<string>;
 }
 
 export interface RouteContext<T = unknown> {
   sencha: SenchaContext;
   route: Route<T>;
+
+  // remove, once  global type augmentation is supported by jsr.io
+  i18n?: typeof i18next;
+  __?: TFunction<string>;
 }
 
 export interface WatcherChangeEvent {
   file: string;
   type: Deno.FsEvent
-}
-
-export interface ServerRenderContext {
-  request: Request;
-  route: Route;
-  html: string;
 }
 
 export type BuildHook = (result: BuildResult, context: SenchaContext) => void;
@@ -74,7 +69,11 @@ export interface HooksConfig {
   serverUpgrade?: OptPromise<(router: OakRouter, routes: Route[]) => void>
   serverAddRoute?: OptPromise<(route: Route) => void>,
   serverRenderRoute?: OptPromise<(
-    result: ServerRenderContext
+    result: {
+      request: OakRequest;
+      route: Route;
+      html: string;
+    }  
   ) => string | void>
 }
 
