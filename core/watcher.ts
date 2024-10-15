@@ -1,5 +1,5 @@
 import * as fs from '@std/f2';
-import EventEmitter from 'events/mod.ts';
+import { EventEmitter } from 'eventemitter';
 
 import { path } from '../deps/std.ts';
 import logger from '../logger/mod.ts';

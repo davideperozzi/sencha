@@ -1,4 +1,4 @@
-import EventEmitter from "events/mod.ts";
+import { EventEmitter } from 'eventemitter';
 import { deepMerge } from '../deps/std.ts';
 import logger from '../logger/mod.ts';
 import { OptPromise, optPromise } from '../utils/async.ts';

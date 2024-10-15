@@ -1,4 +1,4 @@
-import { Eta } from 'npm:eta';
+import { Eta } from 'npm:eta@3.4.0';
 
 import { Sencha, SenchaPlugin } from '../core/mod.ts';
 import { path } from '../deps/std.ts';

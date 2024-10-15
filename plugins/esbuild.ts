@@ -1,5 +1,5 @@
 import { walk } from '@std/fs/walk';
-import * as esbuild from 'esbuild/mod.js';
+import * as esbuild from 'esbuild';
 
 import { SenchaPlugin } from '../core/mod.ts';
 import { path } from '../deps/std.ts';

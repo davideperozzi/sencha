@@ -1,4 +1,4 @@
-import EventEmitter from 'events/mod.ts';
+import { EventEmitter } from 'eventemitter';
 
 export class Emitter extends EventEmitter {}
 

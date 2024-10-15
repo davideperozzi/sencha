@@ -1,10 +1,8 @@
 import '../core/config.ts';
 
 import { Sencha, SenchaPlugin } from '../core/mod.ts';
-// @deno-types="https://cdn.jsdelivr.net/gh/i18next/i18next@v23.2.11/index.d.ts"
-import i18next, { InitOptions, TFunction } from 'i18next/index.js';
-// @deno-types="npm:i18next-fs-backend"
-import Backend, { FsBackendOptions } from 'npm:i18next-fs-backend';
+import i18next, { InitOptions, TFunction } from 'i18next';
+import Backend, { FsBackendOptions } from 'npm:i18next-fs-backend@2.3.2';
 
 declare module '../core/config.ts' {
   interface RouteContext {
@@ -52,7 +50,7 @@ export default (config: I18NPluginConfig = {}) => {
         watcherChange: ({ file }) => file.startsWith(sencha.path(directory)),
         buildInit: async (_, context) => {
           i18n = i18next.createInstance();
-          translate = await i18n.use(Backend).init<FsBackendOptions>({
+          translate = await i18n.use(Backend).init({
             lng: sencha.locales[0],
             saveMissing: true,
             saveMissingPlurals: true,
@@ -67,14 +65,14 @@ export default (config: I18NPluginConfig = {}) => {
             ...config
           });
 
-          context.i18n = i18n;
+          (context as any).i18n = i18n;
         },
         routeMount: async (context) => {
-          await context.sencha.i18n.changeLanguage(
+          await (context.sencha as any).i18n.changeLanguage(
             context.route.lang
           );
 
-          context.i18n = context.sencha.i18n;
+          context.i18n = (context.sencha as any).i18n;
 
           if (config.shortcuts !== false) {
             context.__ = translate;

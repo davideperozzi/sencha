@@ -265,8 +265,8 @@ export async function createRoutesFromFiles(
       const view = cleanUrl(relFile, false, false, true);
       const slugRaw = transformPathToSlug(view, { locale: '' }, pattern);
       const viewPath = viewMap ? await optPromise(viewMap(view, lang, context)) : view;
-      const slug = transformPathToSlug(viewPath, { locale: langSlug }, pattern);
-      const route = createRoute({ lang, slug, slugRaw, file, view, pretty });
+      const slug = transformPathToSlug(viewPath as string, { locale: langSlug }, pattern);
+      const route = createRoute({ lang, slug, file, view, pretty });
 
       if (hasRouteParams(slug)) {
         const params: RouteParamsEntry = await optPromise(

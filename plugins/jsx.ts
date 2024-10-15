@@ -1,5 +1,5 @@
-import { FunctionalComponent } from 'npm:preact';
-import { render } from 'npm:preact-render-to-string';
+import { FunctionalComponent } from 'npm:preact@10.23.1';
+import { render } from 'npm:preact-render-to-string@6.5.7';
 
 import { RouteContext, Sencha, SenchaPlugin } from '../core/mod.ts';
 import { optPromise } from '../utils/async.ts';

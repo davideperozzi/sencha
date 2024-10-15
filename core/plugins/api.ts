@@ -63,7 +63,7 @@ export default (config: ApiConfig) => (sencha: Sencha) => ({
               success: false,
               routes: [],
               timeMs: 0,
-              errors: [err.toString()]
+              errors: [(err as any).toString()]
             });
 
             return;

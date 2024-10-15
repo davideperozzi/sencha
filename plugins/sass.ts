@@ -1,4 +1,4 @@
-import * as sass from 'npm:sass';
+import * as sass from 'npm:sass@1.77.8';
 
 import { SenchaPlugin } from '../core/mod.ts';
 import { fs } from '../deps/std.ts';
