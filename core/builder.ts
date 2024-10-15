@@ -10,12 +10,6 @@ import { PluginManager } from './plugin.ts';
 import { Route, RouteResult } from './route.ts';
 import { SenchaState } from './state.ts';
 
-declare module './config.ts' {
-  interface RouteContext<T = unknown> {
-    route: Route<T>;
-  }
-}
-
 export interface BuilderConfig {
   outDir: string;
   parallel: number;

@@ -1,4 +1,5 @@
 import { deepMerge } from '@std/collection2';
+import { Router as OakRouter } from '@oak/oak';
 import { isDevelopment, type OptPromise } from '../utils/mod.ts';
 import type { SenchaAction } from './action.ts';
 import type { AssetFile } from './asset.ts';
@@ -8,6 +9,8 @@ import type { SenchaPlugin, SenchaPluginFilter } from './plugin.ts';
 import type { Route, RouteData, RouteParams } from './route.ts';
 import { denoFileState, SenchaState } from './state.ts';
 import type store from './store.ts';
+
+import i18next, { TFunction } from 'i18next';
 
 export interface BuildResult {
   cache: boolean;
@@ -22,6 +25,12 @@ export interface SenchaContext {
   fetch: typeof Fetcher.prototype.fetch,
   store: typeof store;
   filters: Record<string, SenchaPluginFilter>;
+
+  // remove, once  global type augmentation is supported by jsr.io
+  style?: (src: string) => string;
+  script?: (src: string) => string;
+  i18n?: typeof i18next;
+  __?: TFunction<string>;
 }
 
 export interface RouteContext<T = unknown> {
@@ -32,6 +41,12 @@ export interface RouteContext<T = unknown> {
 export interface WatcherChangeEvent {
   file: string;
   type: Deno.FsEvent
+}
+
+export interface ServerRenderContext {
+  request: Request;
+  route: Route;
+  html: string;
 }
 
 export type BuildHook = (result: BuildResult, context: SenchaContext) => void;
@@ -53,6 +68,14 @@ export interface HooksConfig {
   viewRender?: OptPromise<(result: { route: Route, html: string }) => boolean>;
   watcherChange?: OptPromise<(event: WatcherChangeEvent) => void>;
   watcherRebuild?: OptPromise<(events: WatcherChangeEvent[]) => void>;
+
+  // server
+  serverInit?: OptPromise<(router: OakRouter) => void>,
+  serverUpgrade?: OptPromise<(router: OakRouter, routes: Route[]) => void>
+  serverAddRoute?: OptPromise<(route: Route) => void>,
+  serverRenderRoute?: OptPromise<(
+    result: ServerRenderContext
+  ) => string | void>
 }
 
 export type RouteViewMap = OptPromise<(view: string, lang: string, ctx: SenchaContext) => string>;
@@ -88,6 +111,12 @@ export interface SenchaConfig
   actions?: (SenchaAction | OptPromise<((sencha: any) => SenchaAction)>)[];
   livereload?: boolean;
   prettyUrls?: boolean;
+
+  // remove, once  global type augmentation is supported by jsr.io
+  api?: {
+    prefix?: string;
+    secret?: string;
+  };
 }
 
 export interface SenchaStartConfig {

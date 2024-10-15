@@ -10,11 +10,13 @@ export interface ApiConfig {
   secret?: string;
 }
 
-declare module '../config.ts' {
-  interface SenchaConfig {
-    api?: ApiConfig;
-  }
-}
+// re-enable, once  global type augmentation is supported by jsr.io
+//
+// declare module '../config.ts' {
+//   interface SenchaConfig {
+//     api?: ApiConfig;
+//   }
+// }
 
 function requestIsValid(secret?: string, reqSecret = '') {
   if ( ! secret) {

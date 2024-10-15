@@ -4,21 +4,23 @@ import {
 import * as fs from '@std/fs';
 import * as path from '@std/path';
 import logger from '../logger/mod.ts';
-import { OptPromise } from '../utils/mod.ts';
 import { SenchaEvents } from './config.ts';
 import { Route } from './route.ts';
 import { Sencha } from './sencha.ts';
 
-declare module './config.ts' {
-  export interface HooksConfig {
-    serverInit?: OptPromise<(router: Router) => void>,
-    serverUpgrade?: OptPromise<(router: Router, routes: Route[]) => void>
-    serverAddRoute?: OptPromise<(route: Route) => void>,
-    serverRenderRoute?: OptPromise<(
-      result: ServerRenderContext
-    ) => string | void>
-  }
-}
+
+// todo: re-enable once this is allowed for JSR.io
+//
+// declare module './config.ts' {
+//   export interface HooksConfig {
+//     serverInit?: OptPromise<(router: Router) => void>,
+//     serverUpgrade?: OptPromise<(router: Router, routes: Route[]) => void>
+//     serverAddRoute?: OptPromise<(route: Route) => void>,
+//     serverRenderRoute?: OptPromise<(
+//       result: ServerRenderContext
+//     ) => string | void>
+//   }
+// }
 
 export interface ServerRenderContext {
   request: Request;

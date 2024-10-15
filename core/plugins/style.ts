@@ -3,11 +3,13 @@ import '../config.ts';
 import { SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
 
-declare module '../config.ts' {
-  interface SenchaContext {
-    style?: (src: string) => string;
-  }
-}
+// todo: re-enable once this is allowed for JSR.io
+//
+// declare module '../config.ts' {
+//   interface SenchaContext {
+//     style?: (src: string) => string;
+//   }
+// }
 
 export default (sencha: Sencha) => ({
   hooks: {
