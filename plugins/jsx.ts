@@ -8,13 +8,11 @@ export interface ReactPluginConfig {
   layout?: string;
 }
 
-declare global {
-  interface SenchaReactLayoutProps<P = unknown> {
-    context: RouteContext;
-    View: {
-      Component: FunctionalComponent;
-      props: P;
-    }
+export interface SenchaReactLayoutProps<P = unknown> {
+  context: RouteContext;
+  View: {
+    Component: FunctionalComponent;
+    props: P;
   }
 }
 
