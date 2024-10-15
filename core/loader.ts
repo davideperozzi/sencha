@@ -1,9 +1,6 @@
 import { EventEmitter } from 'eventemitter';
 import { deepMerge } from '@std/collection2';
 
-import * as path from '@std/path';
-import * as fs from '@std/fs';
-
 import logger from '../logger/mod.ts';
 import { OptPromise, optPromise } from '../utils/async.ts';
 import { SenchaAction } from './action.ts';

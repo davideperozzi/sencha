@@ -1,4 +1,5 @@
-import { render } from 'npm:preact-render-to-string@6.5.7';
+// @deno-types=react-dom-types/server
+import { renderToString } from 'react-dom/server';
 
 import { Sencha, SenchaPlugin } from '../core/mod.ts';
 import { optPromise } from '../utils/async.ts';
@@ -44,7 +45,7 @@ export default (config: ReactPluginConfig = {}) => {
               props = context;
             }
 
-            return '<!DOCTYPE html>' + render(Layout({
+            return '<!DOCTYPE html>' + renderToString(Layout({
               View: { Component, props },
               context
             }, layoutProps.get(layoutPath)));
