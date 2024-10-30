@@ -129,7 +129,7 @@ export class Server {
       await this.sencha.pluginHook('serverAddRoute', [route]);
 
       if (this.config.localeRedirect && route.lang === defaultLocale) {
-        router.redirect(route.url.replace(`/${route.lang}`, '') || '/', route.url, 302);
+        router.redirect(route.url.replace(`/${route.lang}`, '') || '/', route.url, 301);
       }
 
       router.get(route.url, async (context) => {

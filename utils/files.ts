@@ -66,7 +66,7 @@ export async function cleanDir(dir: string) {
 
       if (isSubDirEmpty) {
         try {
-          await Deno.remove(fullPath);
+          await Deno.remove(fullPath, { recursive: true });
         } catch {}
       } else {
         isEmpty = false;

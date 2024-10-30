@@ -43,7 +43,6 @@ export default (config: I18NPluginConfig = {}) => {
     const directory = config.directory || 'locales';
     const filePath = config.file || '{{lng}}.json';
     const loadPath = sencha.path(directory, filePath);
-    let translate: any;
     let i18n: any;
 
     return {
@@ -51,7 +50,8 @@ export default (config: I18NPluginConfig = {}) => {
         watcherChange: ({ file }) => file.startsWith(sencha.path(directory)),
         buildInit: async (_, context) => {
           i18n = i18next.createInstance();
-          translate = await i18n.use(Backend).init({
+
+          await i18n.use(Backend).init({
             lng: sencha.locales[0],
             saveMissing: true,
             saveMissingPlurals: true,
@@ -68,15 +68,11 @@ export default (config: I18NPluginConfig = {}) => {
 
           (context as any).i18n = i18n;
         },
-        routeMount: async (context) => {
-          await (context.sencha as any).i18n.changeLanguage(
-            context.route.lang
-          );
-
-          context.i18n = (context.sencha as any).i18n;
+        routeMount: (context) => {
+          context.i18n = i18n.cloneInstance({ lng: context.route.lang });
 
           if (config.shortcuts !== false) {
-            context.__ = translate;
+            context.__ = context.i18n?.t;
           }
         }
       }

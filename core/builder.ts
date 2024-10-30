@@ -114,8 +114,8 @@ export class Builder {
     for (const page of pages || scanHtmlSync(this.config.outDir)) {
       if ( ! files.includes(page) && await fs.exists(page)) {
         promises.push(
-          Deno.remove(page).then(
-            () => Deno.remove(path.dirname(page)),
+          Deno.remove(page, { recursive: true }).then(
+            () => Deno.remove(path.dirname(page), { recursive: true }),
             (err) => this.logger.warn(
               `failed to remove "${page}": ` + err.message
             )

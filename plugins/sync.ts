@@ -103,7 +103,7 @@ async function sync(
 
       if (await fs.exists(toFile)) {
         try {
-          await Deno.remove(path.join(to, file));
+          await Deno.remove(path.join(to, file), { recursive: true });
         } catch(err) {
           logger.warn(`failed to remove "${toFile}": ` + err);
         }

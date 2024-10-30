@@ -17,7 +17,7 @@ export default (config: SassPluginOptions = {}) => {
           if (result.sourceMap) {
             await fileWrite(mapPath, JSON.stringify(result.sourceMap));
           } else if (await fs.exists(mapPath)) {
-            await Deno.remove(mapPath);
+            await Deno.remove(mapPath, { recursive: true });
           }
 
           return result.css;

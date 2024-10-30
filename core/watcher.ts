@@ -8,6 +8,7 @@ import { AssetFile } from './asset.ts';
 import { BuildResult, SenchaEvents, SenchaStates } from './config.ts';
 import { RouteFilter } from './route.ts';
 import { Sencha } from './sencha.ts';
+import { scanDir } from "../utils/files.ts";
 
 export enum WatcherEvents {
   NEEDS_RELOAD = 'needsreload'
@@ -53,7 +54,21 @@ export class Watcher extends EventEmitter {
   }
 
   async start() {
-    this.watcher = Deno.watchFs(this.sencha.dirs.root, { recursive: true });
+    const files: string[] = [];
+
+    for await (const entry of Deno.readDir(this.sencha.dirs.root)) {
+      const file = entry.name;
+      const isGit = file.startsWith('.git');
+      const isOut = file.startsWith(this.sencha.dirs.out);
+      const isModules = file.startsWith('node_modules');
+      const isIgnore = file.startsWith('_');
+
+      if (!isGit && !isModules && !isOut && !isIgnore) {
+        files.push(this.sencha.path(file));
+      }
+    }
+
+    this.watcher = Deno.watchFs(files, { recursive: true });
     this.configFiles = await this.findConfigFiles();
 
     this.notifiers.clear();
