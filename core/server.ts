@@ -8,7 +8,6 @@ import { SenchaEvents } from './config.ts';
 import { Route } from './route.ts';
 import { Sencha } from './sencha.ts';
 
-
 // todo: re-enable once this is allowed for JSR.io
 //
 // declare module './config.ts' {
@@ -21,6 +20,12 @@ import { Sencha } from './sencha.ts';
 //     ) => string | void>
 //   }
 // }
+
+const isSearchEngineBot = (userAgent: string) => {
+  const botPattern = /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|msnbot|teoma|crawler|spider/i;
+
+  return botPattern.test(userAgent);
+};
 
 export interface ServerRenderContext {
   request: Request;
@@ -133,6 +138,34 @@ export class Server {
       }
 
       router.get(route.url, async (context) => {
+        if (this.config.localeRedirect) {
+          const languages = context.request.acceptsLanguages();
+          const cookie = context.request.headers.get('cookie');
+          const seBot = isSearchEngineBot(context.request.userAgent.ua);
+          const custom = cookie?.split('; ')
+            .find(row => row.startsWith('sencha_custom_locale='))
+            ?.split('=')[1];
+
+          if (languages && custom === undefined && !seBot) {
+            for (const lang of languages) {
+              const locale = lang.split('-')[0];
+
+              if (locale.startsWith(route.lang)) {
+                break;
+              }
+              
+              const prefRoute = routes.find(r => r.lang == locale && r.localized.includes(route.url));
+
+              if (prefRoute) {
+                context.response.status = 302;
+                context.response.redirect(prefRoute.url);
+
+                return;
+              }
+            }
+          }
+        }
+
         await this.route(route, context);
       });
 
@@ -174,23 +207,6 @@ export class Server {
   }
 
   async start() {
-    // if (this.config.localeRedirect) {
-    //   this.app.use(async (ctx: Context, next: Next) => {
-    //     const { url } = ctx.request;
-    //     const { pattern } = this.sencha.config.route;
-    //     const locales = this.sencha.locales;
-    //
-    //     if (!locales.find(locale => url.pathname.startsWith(`/${locale}`))) {
-    //       url.pathname = transformPathToSlug(url.pathname, { locale: locales[0] }, pattern);
-    //       ctx.response.status = Status.Found;
-    //
-    //       return ctx.response.redirect(url);
-    //     }
-    //
-    //     await next();
-    //   });
-    // }
-
     if (this.config.removeTrailingSlash !== false) {
       this.app.use(removeTrailingSlash);
     }
