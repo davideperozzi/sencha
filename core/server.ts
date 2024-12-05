@@ -49,7 +49,14 @@ export interface ServerConfig {
    *
    * @default false
    */
-  localeRedirect?: boolean;
+  localeRedirect?: boolean | string;
+  
+  /**
+   * Whether to redirect to a fallback loacale when 
+   * none of the client defined browser languages
+   * have been found in the generated routes
+   */
+  localeRedirectFallback?: string;
 
   /**
    * The port to run the server on
@@ -122,9 +129,55 @@ export class Server {
     }
   }
 
+  private getPreferredUserLang(context: Context) {
+    const cookie = context.request.headers.get('cookie');
+    const languages = context.request.acceptsLanguages();
+    const savedLang = cookie?.split('; ')
+      .find(row => row.startsWith('sencha_custom_locale='))
+      ?.split('=')[1];
+
+    if (savedLang) {
+      return savedLang;
+    }
+
+    if (languages) {    
+      for (const lang of languages) {
+        const locale = lang.split('-')[0];
+
+        if (this.sencha.locales.includes(locale)) {
+          return locale;
+        }
+      }
+    }
+
+    return this.getFallbackLang();
+  }
+
+  private getFallbackLang() {
+    return this.config.localeRedirectFallback || this.sencha.locales[0];
+  }
+
+  private handleLocaleRedirect(routes: Route[], route: Route, context: Context) {
+    const seBot = isSearchEngineBot(context.request.userAgent.ua);
+    const prefLang = this.getPreferredUserLang(context);
+
+    if (!seBot) {
+      const prefRoute = routes.find(r => r.lang == prefLang && r.localized.includes(route.url));      
+
+      if (prefRoute) {
+        context.response.status = 302;
+        context.response.redirect(prefRoute.url);
+
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   private async update(routes: Route[]) {
     const router = new Router();
-    const defaultLocale = this.sencha.locales[0];
+    const localeRedirect = this.config.localeRedirect;
 
     this.dynamicRouter = router;
 
@@ -133,36 +186,30 @@ export class Server {
     for (const route of routes) {
       await this.sencha.pluginHook('serverAddRoute', [route]);
 
-      if (this.config.localeRedirect && route.lang === defaultLocale) {
-        router.redirect(route.url.replace(`/${route.lang}`, '') || '/', route.url, 301);
+      if (localeRedirect) {
+        router.get(route.url.replace(`/${route.lang}`, '') || '/', (context) => {
+          const prefLang = this.getPreferredUserLang(context);
+
+          if (route.lang == prefLang) {
+            context.response.status = 302;
+            context.response.redirect(route.url);
+          } else {
+            const prefRoute = routes.find(r => r.lang == prefLang && r.localized.includes(route.url));
+
+            if (prefRoute) {
+              context.response.status = 302;
+              context.response.redirect(prefRoute.url);
+            }
+          }
+        });
       }
 
       router.get(route.url, async (context) => {
-        if (this.config.localeRedirect) {
-          const languages = context.request.acceptsLanguages();
-          const cookie = context.request.headers.get('cookie');
-          const seBot = isSearchEngineBot(context.request.userAgent.ua);
-          const custom = cookie?.split('; ')
-            .find(row => row.startsWith('sencha_custom_locale='))
-            ?.split('=')[1];
+        if (localeRedirect) {
+          const redirect = this.handleLocaleRedirect(routes, route, context);
 
-          if (languages && custom === undefined && !seBot) {
-            for (const lang of languages) {
-              const locale = lang.split('-')[0];
-
-              if (locale.startsWith(route.lang)) {
-                break;
-              }
-              
-              const prefRoute = routes.find(r => r.lang == locale && r.localized.includes(route.url));
-
-              if (prefRoute) {
-                context.response.status = 302;
-                context.response.redirect(prefRoute.url);
-
-                return;
-              }
-            }
+          if (redirect) {
+            return;
           }
         }
 

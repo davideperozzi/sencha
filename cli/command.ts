@@ -75,6 +75,11 @@ const command = new Command()
     { default: false, depends: ['serve'] }
   )
   .option(
+    '--serve-redirect-locales-fallback [serveRedirectLocalesFallback:string]',
+    'Redirects non locale URLS to the default locale',
+    { default: undefined, depends: ['serve'] }
+  )
+  .option(
     '--watch [watch:boolean]',
     'Start watcher for local development. Note: Sets logLevel to debug',
     { default: false }
@@ -106,6 +111,7 @@ const command = new Command()
     servePort,
     serveNoTrailingSlash,
     serveRedirectLocales,
+    serveRedirectLocalesFallback,
     logLevel,
     dev,
     logFilter,
@@ -140,12 +146,14 @@ const command = new Command()
         : undefined
     });
 
+
     if (serve) {
       server = new Server(sencha, {
         host: serveHost,
         port: servePort,
         removeTrailingSlash: serveNoTrailingSlash,
-        localeRedirect: serveRedirectLocales
+        localeRedirect: serveRedirectLocales,
+        localeRedirectFallback: serveRedirectLocalesFallback
       });
 
       serverProc = server.start();
