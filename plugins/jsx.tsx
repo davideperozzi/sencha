@@ -1,7 +1,7 @@
-// @deno-types=react-dom-types/server
+import React from 'react';
 import { renderToString } from 'react-dom/server';
 
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
+import { Sencha, type SenchaPlugin } from '../core';
 import { optPromise } from '../utils/async.ts';
 
 export interface ReactPluginConfig {
@@ -45,6 +45,15 @@ export default (config: ReactPluginConfig = {}) => {
               props = context;
             }
 
+            // console.log(layoutProps.get(layoutPath));
+            //
+            // renderToString(
+            //   <Layout {...(layoutProps.get(layoutPath) as any)} viewProps={props} context={context}>
+            //     <Component {...props} />
+            //   </Layout>
+            // );
+
+            // return '';
             return '<!DOCTYPE html>' + renderToString(Layout({
               View: { Component, props },
               context

@@ -1,6 +1,7 @@
-import * as path from '@std/path';
-import * as fs from '@std/fs';
 import { parse, stringify } from '@ungap/structured-clone/json';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { fileRead, fileWrite } from '../utils/files';
 
 export interface SenchaState {
   get<T = unknown>(key: string): Promise<T|null|undefined>;
@@ -23,7 +24,7 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
       }
 
       if (await fs.exists(file)) {
-        const result =  parse(await Deno.readTextFile(file)) as T;
+        const result = parse(await fileRead(file)) as T;
 
         return result;
       }
@@ -35,27 +36,7 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
       const data = stringify(value);
 
       memory.set(key, value);
-      await fs.ensureFile(file);
-      await Deno.writeTextFile(file, data, { create: true });
-
-      return value;
-    }
-  };
-}
-
-export interface DenoMemoryStateOptions {}
-
-export function denoMemoryState(
-  config: DenoMemoryStateOptions = {}
-): SenchaState {
-  const memory = new Map<string, unknown>();
-
-  return {
-    get: async <T = unknown>(key: string) => {
-      return memory.get(key) as T;
-    },
-    set: async <T = unknown>(key: string, value: T) => {
-      memory.set(key, value);
+      await fileWrite(file, data);
 
       return value;
     }

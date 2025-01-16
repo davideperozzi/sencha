@@ -1,6 +1,6 @@
 import '../config.ts';
 
-import { SenchaPlugin } from '../plugin.ts';
+import { type SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
 
 // todo: re-enable once this is allowed for JSR.io

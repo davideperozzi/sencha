@@ -1,4 +1,4 @@
-import { OptPromise, optPromise } from '../utils/async.ts';
+import { type OptPromise, optPromise } from '../utils/async.ts';
 
 export interface SenchaAction {
   name: string;

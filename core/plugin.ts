@@ -1,5 +1,5 @@
-import { OptPromise, optPromise } from '../utils/mod.ts';
-import { HooksConfig } from './config.ts';
+import { type OptPromise, optPromise } from '../utils';
+import { type HooksConfig } from './config.ts';
 
 export type SenchaPluginFilter = (...vars: any[]) => any;
 export interface SenchaPlugin {

@@ -1,5 +1,5 @@
-import * as path from '@std/path';
-import { SenchaPlugin } from '../plugin.ts';
+import * as path from 'node:path';
+import { type SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
 
 const routePath = '/c2VuY2hhbGl2ZXJlbG9hZAo';

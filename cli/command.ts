@@ -1,6 +1,6 @@
 import { Command } from '@cliffy/command';
-import { Sencha, Server, Watcher, WatcherEvents } from '../core/mod.ts';
-import logger, { LogLevel } from '../logger/mod.ts';
+import { Sencha, Server, Watcher, WatcherEvents } from '../core';
+import logger, { LogLevel } from '../logger';
 
 function getVersion() {
   const { pathname } = new URL(import.meta.resolve('../'));
@@ -129,8 +129,8 @@ const command = new Command()
 
     streamLogs(watch ? 'debug' : logLevel, logFilter);
 
-    if (watch && ! Deno.env.has('SENCHA_ENV')) {
-      Deno.env.set('SENCHA_ENV', 'dev');
+    if (watch && ! Bun.env.SENCHA_ENV) {
+      Bun.env.SENCHA_ENV = 'dev';
     }
 
     const sencha = new Sencha();
@@ -181,7 +181,8 @@ const command = new Command()
 
         cliLogger.debug('watcher needs reload, leaving process with 243');
         sencha.runAction('afterRun');
-        Deno.exit(243);
+        process.exit(243);
+        // Bun.exit(243);
 
         // todo: fix Top-level await promise never resolved error
         // Promise.all([ watcherProc, serverProc ]).then(() => {
@@ -200,10 +201,10 @@ const command = new Command()
   });
 
 try {
-  await command.parse(Deno.args);
+  await command.parse(Bun.argv.slice(2));
 } catch (error) {
   cliLogger.error(error);
-  Deno.exit(1);
+  process.exit(1);
 }
 
-Deno.exit(0);
+process.exit(0);

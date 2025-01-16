@@ -1,14 +1,11 @@
-import * as path from '@std/path';
-import * as fs from '@std/fs';
-import logger from '../logger/mod.ts';
-import {
-  batchPromise,
-  fileRead, fileWrite, optPromise, scanHtmlSync
-} from '../utils/mod.ts';
-import { BuildResult, RouteContext, SenchaContext } from './config.ts';
+import * as path from 'node:path';
+import * as fs from 'node:fs/promises';
+import logger from '../logger';
+import { batchPromise, fileRead, fileWrite, optPromise, scanHtml } from '../utils';
+import type { BuildResult, RouteContext, SenchaContext } from './config.ts';
+import type { Route, RouteResult } from './route.ts';
+import type { SenchaState } from './state.ts';
 import { PluginManager } from './plugin.ts';
-import { Route, RouteResult } from './route.ts';
-import { SenchaState } from './state.ts';
 
 export interface BuilderConfig {
   outDir: string;
@@ -111,11 +108,12 @@ export class Builder {
     const promises = [];
     let removed = 0;
 
-    for (const page of pages || scanHtmlSync(this.config.outDir)) {
+    for (const page of pages || await scanHtml(this.config.outDir)) {
       if ( ! files.includes(page) && await fs.exists(page)) {
         promises.push(
-          Deno.remove(page, { recursive: true }).then(
-            () => Deno.remove(path.dirname(page), { recursive: true }),
+          
+          fs.rm(page, { recursive: true }).then(
+            () => fs.rm(path.dirname(page), { recursive: true }),
             (err) => this.logger.warn(
               `failed to remove "${page}": ` + err.message
             )
@@ -140,7 +138,7 @@ export class Builder {
   async render(result: RouteResult) {
     const { route, html } = result;
 
-    await fs.ensureDir(path.dirname(route.out));
+    await fs.mkdir(path.dirname(route.out), { recursive: true });
     await fileWrite(route.out, html);
   }
 

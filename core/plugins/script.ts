@@ -1,6 +1,6 @@
 import '../config.ts';
 
-import { SenchaPlugin } from '../plugin.ts';
+import { type SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
 
 // re-enable, once  global type augmentation is supported by jsr.io

@@ -1,12 +1,11 @@
-import {
-  Application, Context, Next, Request, Router, send, Status,
-} from '@oak/oak';
-import * as fs from '@std/fs';
-import * as path from '@std/path';
-import logger from '../logger/mod.ts';
+import { Application, Context, type Next, Request, Router, send, Status } from '@oak/oak';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import logger from '../logger';
 import { SenchaEvents } from './config.ts';
-import { Route } from './route.ts';
+import { type Route } from './route.ts';
 import { Sencha } from './sencha.ts';
+import { fileRead } from '../utils/files.ts';
 
 // todo: re-enable once this is allowed for JSR.io
 //
@@ -234,7 +233,7 @@ export class Server {
 
       const result: ServerRenderContext = {
         route,
-        html: await Deno.readTextFile(htmlFile),
+        html: await fileRead(htmlFile),
         request: context.request
       };
 

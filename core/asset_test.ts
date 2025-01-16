@@ -1,3 +1,5 @@
-Deno.test('asset', async () => {
+import { test } from "bun:test";
+
+test('asset', async () => {
 
 });

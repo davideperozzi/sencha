@@ -1,17 +1,15 @@
-// @deno-types=react-types
-import { ReactNode } from 'react';
-import { deepMerge } from '@std/collection2';
+import { deepMerge } from '@std/collections';
 import { Router as OakRouter, Request as OakRequest } from '@oak/oak';
-import { isDevelopment, type OptPromise } from '../utils/mod.ts';
+import { isDevelopment, type OptPromise } from '../utils';
 import type { SenchaAction } from './action.ts';
 import type { AssetFile } from './asset.ts';
 import type { FetchConfig, Fetcher } from './fetcher.ts';
 import type { HealthCheck } from './health.ts';
 import type { SenchaPlugin, SenchaPluginFilter } from './plugin.ts';
 import type { Route, RouteData, RouteParams } from './route.ts';
-import { denoFileState, SenchaState } from './state.ts';
+import { denoFileState, type SenchaState } from './state.ts';
 import type store from './store.ts';
-import i18next, { TFunction } from 'i18next';
+import i18next, { type TFunction } from 'i18next';
 
 export interface BuildResult {
   cache: boolean;
@@ -45,7 +43,7 @@ export interface RouteContext<T = unknown> {
 
 export interface WatcherChangeEvent {
   file: string;
-  type: Deno.FsEvent
+  type: any; // Deno.FsEvent
 }
 
 export type BuildHook = (result: BuildResult, context: SenchaContext) => void;
@@ -129,7 +127,7 @@ export interface SenchaStartConfig {
 export interface SenchaReactLayoutProps<P = Record<string, any>> {
   context: RouteContext;
   View: {
-    Component: ReactNode;
+    Component: React.ReactElement<any>;
     props: P;
   }
 }
@@ -163,7 +161,7 @@ export function createConfig(config: SenchaOptions = {}) {
   return deepMerge<SenchaConfig>({
     locale: 'en',
     outDir: 'dist',
-    rootDir: Deno.cwd(),
+    rootDir: process.cwd(),
     useActions: [],
     assetDir: '_',
     plugins: [],

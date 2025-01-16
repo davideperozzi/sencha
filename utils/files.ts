@@ -1,43 +1,15 @@
-import * as fs from '@std/fs';
-import * as path from '@std/path';
-
-export function scanDirSync(dirPath: string): string[] {
-  const filePaths: string[] = [];
-  const dirs: string[] = [dirPath];
-
-  while (dirs.length > 0) {
-    const currentDir = dirs.pop()!;
-    const entries = Deno.readDirSync(currentDir);
-
-    for (const entry of entries) {
-      const fullPath = `${currentDir}/${entry.name}`;
-
-      if (entry.isFile) {
-        filePaths.push(fullPath);
-      } else if (entry.isDirectory) {
-        dirs.push(fullPath);
-      }
-    }
-  }
-
-  return filePaths;
-}
+import { readdir, exists, mkdir } from 'node:fs/promises';
+import * as path from 'node:path';
 
 export async function scanDir(dirPath: string): Promise<string[]> {
   const files: string[] = [];
 
-  if ( ! await fs.exists(dirPath)) {
+  if ( ! await exists(dirPath)) {
     return [];
   }
 
-  for await (const entry of Deno.readDir(dirPath)) {
-    const entryPath = path.join(dirPath, entry.name);
-
-    if (entry.isDirectory) {
-      files.push(...(await scanDir(entryPath)));
-    } else {
-      files.push(entryPath);
-    }
+  for (const file of await readdir(dirPath, { recursive: true })) {
+    files.push(path.join(dirPath, file));
   }
 
   return files.filter(entries => entries.length > 0);
@@ -47,43 +19,44 @@ export async function scanHtml(dirPath: string) {
   return (await scanDir(dirPath)).filter((file) => file.endsWith('.html'));
 }
 
-export function scanHtmlSync(dirPath: string) {
-  return scanDirSync(dirPath).filter((file) => file.endsWith('.html'));
-}
-
 export async function cleanDir(dir: string) {
   let isEmpty = true;
 
-  if ( ! await fs.exists(dir)) {
+  if ( ! await exists(dir)) {
     return isEmpty;
   }
 
-  for await (const entry of Deno.readDir(dir)) {
-    const fullPath = path.join(dir, entry.name);
+  for (const fullPath of await readdir(dir)) {
+    // const fullPath = path.join(dir, entry.name);
 
-    if (entry.isDirectory) {
-      const isSubDirEmpty = await cleanDir(fullPath);
-
-      if (isSubDirEmpty) {
-        try {
-          await Deno.remove(fullPath, { recursive: true });
-        } catch {}
-      } else {
-        isEmpty = false;
-      }
-    } else {
-      isEmpty = false;
-    }
+    // if (entry.isDirectory) {
+    //   const isSubDirEmpty = await cleanDir(fullPath);
+    //
+    //   if (isSubDirEmpty) {
+    //     try {
+    //       await Bun.file(fullPath).unlink()
+    //       // await Bun.remove(fullPath, { recursive: true });
+    //     } catch {}
+    //   } else {
+    //     isEmpty = false;
+    //   }
+    // } else {
+    //   isEmpty = false;
+    // }
   }
 
   return isEmpty;
 }
 
 export async function fileWrite(file: string, content: string) {
-  await fs.ensureDir(path.dirname(file));
-  await Deno.writeTextFile(file, content);
+  await mkdir(path.dirname(file), { recursive: true });
+  await Bun.write(file, content);
 }
 
 export async function fileRead(path: string) {
-  return await Deno.readTextFile(path);
+  return await Bun.file(path).text();
+}
+
+export async function fileRemove(path: string) {
+  return await Bun.file(path).unlink();
 }

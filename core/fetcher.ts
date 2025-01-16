@@ -1,6 +1,6 @@
-import { deepMerge } from '@std/collection2';
-import logger from '../logger/mod.ts';
-import { isGetRequest, measure, trimUrl, uniqueKey } from '../utils/mod.ts';
+import { deepMerge } from '@std/collections';
+import logger from '../logger';
+import { isGetRequest, measure, trimUrl, uniqueKey } from '../utils';
 import store from './store.ts';
 
 export type FetchOptions = Partial<FetchConfig<Partial<FetchEndpoint>>>;

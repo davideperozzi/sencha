@@ -1,7 +1,7 @@
-import postcss, { Plugin } from 'postcss';
+import postcss, { type Plugin } from 'postcss';
 
-import { SenchaPlugin } from '../core/mod.ts';
-import { fileRead } from '../utils/mod.ts';
+import { type SenchaPlugin } from '../core';
+import { fileRead } from '../utils';
 
 export interface PostCSSPluginOptions {
   matcher?: RegExp | string | string[];

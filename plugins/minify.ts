@@ -1,7 +1,6 @@
-// @deno-types=npm:@types/html-minifier@4.0.0
-import { minify, Options } from 'npm:html-minifier@4.0.0';
+import { minify, type Options } from 'html-minifier';
 
-import { SenchaPlugin } from '../core/mod.ts';
+import { type SenchaPlugin } from '../core';
 
 export interface MinifypluginConfig extends Options {}
 

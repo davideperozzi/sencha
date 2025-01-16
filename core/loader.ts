@@ -1,11 +1,11 @@
-import { EventEmitter } from 'eventemitter';
-import { deepMerge } from '@std/collection2';
+import { EventEmitter } from 'eventemitter3';
+import { deepMerge } from '@std/collections';
 
-import logger from '../logger/mod.ts';
-import { OptPromise, optPromise } from '../utils/async.ts';
-import { SenchaAction } from './action.ts';
-import { SenchaConfig } from './config.ts';
-import { SenchaPlugin } from './plugin.ts';
+import logger from '../logger';
+import { type OptPromise, optPromise } from '../utils/async.ts';
+import type { SenchaAction } from './action.ts';
+import type { SenchaConfig } from './config.ts';
+import type { SenchaPlugin } from './plugin.ts';
 
 type LoaderAction = (SenchaAction | OptPromise<(sencha: any) => SenchaAction>);
 type LoaderPlugin = (SenchaPlugin | OptPromise<(sencha: any) => SenchaPlugin>);
