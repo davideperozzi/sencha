@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import { Command } from '@cliffy/command';
 import { Sencha, Server, Watcher, WatcherEvents } from '../core';
 import logger, { LogLevel } from '../logger';
@@ -85,6 +87,11 @@ const command = new Command()
     { default: false }
   )
   .option(
+    '--watch-routes [watchRoutes:boolean]',
+    'Watch the routes via the latest route file and upgrade on change',
+    { default: false }
+  )
+  .option(
     '--no-api [noApi:boolean]',
     'Do not expose the API when serving',
     { default: false, depends: ['serve'] }
@@ -119,7 +126,8 @@ const command = new Command()
     noCache,
     noApi,
     serve,
-    watch
+    watch, 
+    watchRoutes
   }: any) => {
     if (dev) {
       watch = true;
@@ -151,6 +159,7 @@ const command = new Command()
       server = new Server(sencha, {
         host: serveHost,
         port: servePort,
+        watchRoutes,
         removeTrailingSlash: serveNoTrailingSlash,
         localeRedirect: serveRedirectLocales,
         localeRedirectFallback: serveRedirectLocalesFallback
@@ -182,14 +191,6 @@ const command = new Command()
         cliLogger.debug('watcher needs reload, leaving process with 243');
         sencha.runAction('afterRun');
         process.exit(243);
-        // Bun.exit(243);
-
-        // todo: fix Top-level await promise never resolved error
-        // Promise.all([ watcherProc, serverProc ]).then(() => {
-        //   cliLogger.debug('watcher needs reload, leaving process with 243');
-        //   sencha.runAction('afterRun');
-        //   Deno.exit(243);
-        // });
       });
     }
 

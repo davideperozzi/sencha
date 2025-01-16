@@ -18,69 +18,23 @@ import { Sencha } from '../';
  */
 export interface EsbuildPluginConfig extends esbuild.BuildOptions {}
 
-export async function expandEntryPoints(
-  entryPoints: EsbuildPluginConfig['entryPoints'],
-  rootDir = process.cwd(),
-) {
-  // if (Array.isArray(entryPoints)) {
-  //   for (const entryPoint of entryPoints) {
-  //     if (typeof entryPoint === 'string') {
-  //       const filePaths = [];
-  //       const globPath = path.isAbsolute(entryPoint)
-  //         ? entryPoint
-  //         : path.join(rootDir, entryPoint);
-  //       const normPath = globPath.replace(/\*.*\..*$/, '');
-  //       const regexPath = path.globToRegExp(globPath);
-  //
-  //       if (path.isGlob(entryPoint)) {
-  //         const files = walk(normPath, { match: [regexPath] });
-  //
-  //         for await (const file of files) {
-  //           if (file.isFile) {
-  //             filePaths.push(file.path);
-  //           }
-  //         }
-  //       } else {
-  //         filePaths.push(entryPoint);
-  //       }
-  //
-  //       return filePaths;
-  //     }
-  //   }
-  // }
-
-  return entryPoints;
-}
-
-export default (config: EsbuildPluginConfig = {}) => (sencha: Sencha) => {
+export default (config: EsbuildPluginConfig = {}) => () => {
   return {
     hooks: {
-      ...(config.entryPoints ? {
-        buildSuccess: async () => {
+      assetProcess: async (asset: any) => {
+        if (asset.is(['ts', 'js']) && asset.isFirst()) {
           await esbuild.build({
-            ...config,
-            entryPoints: await expandEntryPoints(
-              config.entryPoints,
-              sencha.dirs.root
+            allowOverwrite: true,
+            bundle: true,
+            ...(config.splitting
+              ? { outdir: path.dirname(asset.dest), }
+              : { outfile: asset.dest }
             ),
-          })
+            ...config,
+            entryPoints: [ asset.path ],
+          });
         }
-      } : {
-        assetProcess: async (asset: any) => {
-          if (asset.is(['ts', 'js']) && asset.isFirst()) {
-            await esbuild.build({
-              allowOverwrite: true,
-              bundle: true,
-              ...(config.splitting
-                ? { outdir: path.dirname(asset.dest), }
-                : { outfile: asset.dest }
-              ),
-              ...config,
-              entryPoints: [ asset.path ],
-            });
-          }
-        }
-      })
+      }
     }
   } as SenchaPlugin;
 };

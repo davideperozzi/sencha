@@ -3,13 +3,11 @@ import '../config.ts';
 import { type SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
 
-// re-enable, once  global type augmentation is supported by jsr.io
-//
-// declare module '../config.ts' {
-//   interface SenchaContext {
-//     script?: (src: string) => string;
-//   }
-// }
+declare module '../config.ts' {
+  interface SenchaContext {
+    script?: (src: string) => string;
+  }
+}
 
 export default (sencha: Sencha) => ({
   hooks: {

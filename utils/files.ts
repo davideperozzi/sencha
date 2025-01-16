@@ -1,4 +1,5 @@
-import { readdir, exists, mkdir } from 'node:fs/promises';
+import { existsSync, statSync } from "node:fs";
+import { exists, mkdir, readdir, unlink } from 'node:fs/promises';
 import * as path from 'node:path';
 
 export async function scanDir(dirPath: string): Promise<string[]> {
@@ -19,30 +20,33 @@ export async function scanHtml(dirPath: string) {
   return (await scanDir(dirPath)).filter((file) => file.endsWith('.html'));
 }
 
-export async function cleanDir(dir: string) {
+export async function cleanDir(dir: string): Promise<boolean> {
   let isEmpty = true;
 
-  if ( ! await exists(dir)) {
+  if (!existsSync(dir)) {
     return isEmpty;
   }
 
-  for (const fullPath of await readdir(dir)) {
-    // const fullPath = path.join(dir, entry.name);
+  for (const file of await readdir(dir)) {
+    const fullPath = path.join(dir, file);
+    const stats = statSync(fullPath);
 
-    // if (entry.isDirectory) {
-    //   const isSubDirEmpty = await cleanDir(fullPath);
-    //
-    //   if (isSubDirEmpty) {
-    //     try {
-    //       await Bun.file(fullPath).unlink()
-    //       // await Bun.remove(fullPath, { recursive: true });
-    //     } catch {}
-    //   } else {
-    //     isEmpty = false;
-    //   }
-    // } else {
-    //   isEmpty = false;
-    // }
+    if (stats.isDirectory()) {
+      const isSubDirEmpty = await cleanDir(fullPath);
+
+      if (isSubDirEmpty) {
+        try {
+          await unlink(fullPath);
+        } catch {}
+      } else {
+        isEmpty = false;
+      }
+    } else {
+      try {
+        await unlink(fullPath);
+      } catch {}
+      isEmpty = false;
+    }
   }
 
   return isEmpty;

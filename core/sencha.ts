@@ -91,6 +91,7 @@ export class Sencha {
 
   get state() {
     return {
+      watch: this.config.state?.watch || (() => undefined),
       get: this.config.state?.get || (() => Promise.resolve(undefined)),
       set: this.config.state?.set || (() => Promise.resolve())
     } as SenchaState;
@@ -281,7 +282,13 @@ export class Sencha {
       this.logger.error(`build failed with ${result.errors.length} errors`);
     } else {
       this.emitter.emit(SenchaEvents.BUILD_SUCCESS, result);
-      this.state.set(SenchaStates.LAST_ROUTES, allRoutes);
+      this.state.set(SenchaStates.LAST_ROUTES, allRoutes.map(route => {
+        const clonedRoute = { ...route };
+
+        clonedRoute.data = {};
+
+        return clonedRoute;
+      }));
 
       if (filter) {
         this.emitter.emit(SenchaEvents.ROUTES_FULL_UPDATE, allRoutes);
