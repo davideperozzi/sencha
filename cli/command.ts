@@ -85,6 +85,11 @@ const command = new Command()
     { default: false }
   )
   .option(
+    '--watch-routes [watchRoutes:boolean]',
+    'Watch the routes via the latest route file and upgrade on change',
+    { default: false }
+  )
+  .option(
     '--no-api [noApi:boolean]',
     'Do not expose the API when serving',
     { default: false, depends: ['serve'] }
@@ -119,7 +124,8 @@ const command = new Command()
     noCache,
     noApi,
     serve,
-    watch
+    watch,
+    watchRoutes
   }: any) => {
     if (dev) {
       watch = true;
@@ -146,14 +152,14 @@ const command = new Command()
         : undefined
     });
 
-
     if (serve) {
       server = new Server(sencha, {
         host: serveHost,
         port: servePort,
+        watchRoutes,
         removeTrailingSlash: serveNoTrailingSlash,
         localeRedirect: serveRedirectLocales,
-        localeRedirectFallback: serveRedirectLocalesFallback
+        localeRedirectFallback: serveRedirectLocalesFallback,
       });
 
       serverProc = server.start();

@@ -95,6 +95,7 @@ export class Sencha {
 
   get state() {
     return {
+      watch: this.config.state?.watch || (() => undefined),
       get: this.config.state?.get || (() => Promise.resolve(undefined)),
       set: this.config.state?.set || (() => Promise.resolve())
     } as SenchaState;

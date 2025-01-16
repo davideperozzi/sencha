@@ -7,6 +7,7 @@ import logger from '../logger/mod.ts';
 import { SenchaEvents } from './config.ts';
 import { Route } from './route.ts';
 import { Sencha } from './sencha.ts';
+import { SenchaStates } from "./config.ts";
 
 // todo: re-enable once this is allowed for JSR.io
 //
@@ -71,6 +72,13 @@ export interface ServerConfig {
    * @default localhost
    */
   host?: string;
+
+  /**
+   * Wether to watch the routes state and upgrade
+   *
+   * @default false
+   */
+  watchRoutes?: boolean;
 }
 
 const removeTrailingSlash = async (ctx: Context, next: Next) => {
@@ -121,11 +129,19 @@ export class Server {
   }
 
   private async restore() {
-    const routes = await this.sencha.state.get<Route[]>('sencha.lastRoutes');
+    const routes = await this.sencha.state.get<Route[]>(SenchaStates.LAST_ROUTES);
 
     if (routes) {
       this.logger.debug(`restored ${routes.length} routes`);
       await this.update(routes);
+
+    }
+
+    if (this.config.watchRoutes) {
+      this.sencha.state.watch<Route[]>(
+        SenchaStates.LAST_ROUTES,
+        routes => this.update(routes)
+      );
     }
   }
 
