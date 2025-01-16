@@ -1,5 +1,4 @@
-import React from 'react';
-import { renderToString } from 'react-dom/server';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import { Sencha, type SenchaPlugin } from '../core';
 import { optPromise } from '../utils/async.ts';
@@ -33,31 +32,23 @@ export default (config: ReactPluginConfig = {}) => {
               );
             }
 
-            let props = {};
+            let viewProps = {};
             const {
-              default: Component,
+              default: ViewComponent,
               getStaticProps = null
             } = await import('file://' + route.file + '#' + Date.now());
 
             if (getStaticProps) {
-              props = await optPromise(getStaticProps, context);
+              viewProps = await optPromise(getStaticProps, context);
             } else {
-              props = context;
+              viewProps = context;
             }
 
-            // console.log(layoutProps.get(layoutPath));
-            //
-            // renderToString(
-            //   <Layout {...(layoutProps.get(layoutPath) as any)} viewProps={props} context={context}>
-            //     <Component {...props} />
-            //   </Layout>
-            // );
-
-            // return '';
-            return '<!DOCTYPE html>' + renderToString(Layout({
-              View: { Component, props },
-              context
-            }, layoutProps.get(layoutPath)));
+            return '<!DOCTYPE html>' + renderToStaticMarkup(
+              <Layout {...layoutProps.get(layoutPath) as any} context={context}>
+                <ViewComponent {...viewProps} />
+              </Layout>
+            );
           }
         }
       }

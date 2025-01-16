@@ -1,6 +1,6 @@
 {
   "name": "sencha",
-  "module": "cli.ts",
+  "module": "index.ts",
   "type": "module",
   "bin": {
     "sencha": "cli.ts"
@@ -24,7 +24,7 @@
     "i18next": "^24.2.1",
     "i18next-fs-backend": "2.3.2",
     "postcss": "^8.5.1",
-    "sass": "^1.83.4",
-    "server": "react-dom/server"
+    "react-dom": "^19.0.0",
+    "sass": "^1.83.4"
   }
 }
