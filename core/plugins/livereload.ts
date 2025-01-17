@@ -4,7 +4,7 @@ import { Sencha } from '../sencha.ts';
 import { ServerWebSocket } from 'bun';
 
 const routePath = '/c2VuY2hhbGl2ZXJlbG9hZAo';
-const reloadScript = /* js */`
+const reloadScript = (wsPath: string) => `
   let isClosed = false;
   let webSocket = null;
 
@@ -16,7 +16,7 @@ const reloadScript = /* js */`
     const { protocol, host } = document.location;
     const proto = protocol === 'https:' ? 'wss://' : 'ws://';
 
-    webSocket = new WebSocket(proto + host + "${routePath}");
+    webSocket = new WebSocket(proto + host + "${wsPath}");
 
     webSocket.addEventListener('close', () => {
       isClosed = true;
@@ -65,7 +65,7 @@ const reloadScript = /* js */`
 `;
 
 export default (sencha: Sencha) => {
-  let sockets: Map<string, ServerWebSocket<unknown>>;
+  let sockets: Map<string, ServerWebSocket<unknown>> = new Map();
 
   return {
     hooks: {
@@ -111,7 +111,7 @@ export default (sencha: Sencha) => {
           const id = Bun.randomUUIDv7();
 
           if (!server.upgrade(req, { data: { id } })) {
-            return new Response(reloadScript, {
+            return new Response(reloadScript(routePath), {
               headers: {
                 'Content-Type': 'text/javascript;charset=utf-8'
               }
