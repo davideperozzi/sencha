@@ -138,7 +138,6 @@ export class Builder {
   async render(result: RouteResult) {
     const { route, html } = result;
 
-    await fs.mkdir(path.dirname(route.out), { recursive: true });
     await fileWrite(route.out, html);
   }
 

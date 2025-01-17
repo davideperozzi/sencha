@@ -192,7 +192,10 @@ export class AssetProcessor {
       file.skipped = false;
 
       if (typeof output === 'string') {
-        await fs.mkdir(path.dirname(file.dest), { recursive: true });
+        try {
+          await fs.mkdir(path.dirname(file.dest), { recursive: true });
+        } catch(err) {}
+
         await fileWrite(file.dest, output);
       } 
 

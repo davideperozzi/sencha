@@ -94,7 +94,9 @@ async function sync(
       const fromFile = path.join(from, file);
       const toFile = path.join(to, file);
 
-      await fs.mkdir(path.dirname(toFile), { recursive: true });
+      try {
+        await fs.mkdir(path.dirname(toFile), { recursive: true });
+      } catch(err) {}
 
       if (await fs.exists(fromFile)) {
         await fs.copyFile(fromFile, toFile);

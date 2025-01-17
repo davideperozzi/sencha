@@ -56,7 +56,10 @@ export async function cleanDir(dir: string): Promise<boolean> {
 }
 
 export async function fileWrite(file: string, content: string) {
-  await mkdir(path.dirname(file), { recursive: true });
+  try {
+    await mkdir(path.dirname(file), { recursive: true });
+  } catch(err) {}
+
   await Bun.write(file, content);
 }
 
