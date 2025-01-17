@@ -9,7 +9,6 @@ import { fileRead } from '../utils/files.ts';
 import { SenchaEvents, SenchaStates } from './config.ts';
 import { type Route } from './route.ts';
 import { Sencha } from './sencha.ts';
-import { SenchaStates } from "./config.ts";
 
 interface ServerUpgradeData {
   routes: Route[];
@@ -24,28 +23,6 @@ declare module './config.ts' {
     serverAddRoute?: OptPromise<(route: Router) => void>,
     serverRenderRoute?: OptPromise<(result: ServerRenderContext) => string | void>
   }
-}
-
-const isSearchEngineBot = (userAgent?: string | null) => {
-  if (!userAgent) {
-    return false;
-  }
-
-  const botPattern = /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|msnbot|teoma|crawler|spider/i;
-
-  return botPattern.test(userAgent);
-};
-
-function parseRange(range: string, fileSize: number): { start: number; end: number } {
-  const [, rangeStart, rangeEnd] = range.match(/bytes=(\d*)-(\d*)/) || [];
-  const start = rangeStart ? parseInt(rangeStart, 10) : 0;
-  const end = rangeEnd ? parseInt(rangeEnd, 10) : fileSize - 1;
-
-  if (start >= fileSize || end >= fileSize || start > end) {
-    throw new Error("Invalid Range");
-  }
-
-  return { start, end };
 }
 
 export interface ServerRenderContext {
@@ -99,16 +76,29 @@ export interface ServerConfig {
    * @default localhost
    */
   host?: string;
-
-  /**
-   * Wether to watch the routes state and upgrade
-   *
-   * @default false
-   */
-  watchRoutes?: boolean;
 }
 
-const removeTrailingSlash = (req: Request) => {
+function isSearchEngineBot(userAgent?: string | null) {
+  if (!userAgent) {
+    return false;
+  }
+
+  return /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|msnbot|teoma|crawler|spider/i.test(userAgent);
+};
+
+function parseRange(range: string, fileSize: number): { start: number; end: number } {
+  const [, rangeStart, rangeEnd] = range.match(/bytes=(\d*)-(\d*)/) || [];
+  const start = rangeStart ? parseInt(rangeStart, 10) : 0;
+  const end = rangeEnd ? parseInt(rangeEnd, 10) : fileSize - 1;
+
+  if (start >= fileSize || end >= fileSize || start > end) {
+    throw new Error("Invalid Range");
+  }
+
+  return { start, end };
+}
+
+function removeTrailingSlash(req: Request) {
   const url = new URL(req.url);
 
   if (url.pathname.endsWith('/') && url.pathname !== '/') {
@@ -117,6 +107,15 @@ const removeTrailingSlash = (req: Request) => {
     return Response.redirect(url, 302);
   }
 };
+
+function parseAcceptLanguage(header: string): string[] {
+  return header.split(",") 
+    .map((lang: string) => {
+      const code = lang.split(";")[0]; 
+
+      return code ? code.trim() : '';
+    }).filter(Boolean); 
+}
 
 type ResponseFn = (request: Request) => Promise<Response|undefined|void>|undefined;
 
@@ -193,7 +192,7 @@ export class Server {
 
   private getPreferredUserLang(request: Request) {
     const cookie = request.headers.get('cookie');
-    const languages = request.headers.get('accepted-languages');
+    const languages = parseAcceptLanguage(request.headers.get('accept-language') || '');
     const savedLang = cookie?.split('; ')
       .find(row => row.startsWith('sencha_custom_locale='))
       ?.split('=')[1];
@@ -356,12 +355,13 @@ export class Server {
         encoding = "deflate";
       }
 
+      const noCache = this.sencha.isDev() && ['text/javascript', 'text/css'].find(m => mimeType.startsWith(m));
       const responseBuffer = compressedBuffer || new Uint8Array(rawBuffer);
       const headers: Record<string, string> = {
         "Content-Type": mimeType,
         "Content-Length": responseBuffer.length.toString(),
-        "Accept-Ranges": "bytes",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": noCache ? "no-cache, no-store, must-revalidate" : "public, max-age=3600",
+        "Accept-Ranges": "bytes"
       };
 
       if (encoding) {
@@ -395,7 +395,7 @@ export class Server {
           this.sockets.delete((ws.data as any).id);
         },
       },
-      fetch: async (req, server) => {
+      fetch: async (req) => {
         if (this.config.removeTrailingSlash !== false) {
           const redirect = removeTrailingSlash(req);
 

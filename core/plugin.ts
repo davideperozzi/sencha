@@ -32,7 +32,7 @@ export class PluginManager {
 
         const newResult = await optPromise(hook(...args));
 
-        if (newResult) {
+        if (typeof newResult !== 'undefined') {
           result = newResult;
         }
 
@@ -42,7 +42,7 @@ export class PluginManager {
       }
     }
 
-    if (result) {
+    if (typeof result !== 'undefined') {
       return result;
     }
 

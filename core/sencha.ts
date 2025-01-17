@@ -200,7 +200,10 @@ export class Sencha {
       this.logger.error(err);
     }
 
-    timeLog.end('assets', `${assets.length} assets built in`);
+    timeLog.end(
+      'assets', 
+      `${assets.filter(asset => !asset.skipped).length} assets built in`
+    );
 
     return { assets, errors };
   }

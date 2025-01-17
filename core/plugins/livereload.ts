@@ -105,7 +105,9 @@ export default (sencha: Sencha) => {
         }
       },
       serverUpgrade: (router, { server, sockets: newSockets }) =>  {
-        sockets = newSockets;
+        if (newSockets) {
+          sockets = newSockets;
+        }
 
         router.get(routePath, async (req) => {
           const id = Bun.randomUUIDv7();

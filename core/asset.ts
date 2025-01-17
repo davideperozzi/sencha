@@ -1,4 +1,4 @@
-import * as fs from 'node:fs';
+import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import logger from '../logger';
 import { cleanUrl, fileWrite } from '../utils';
@@ -21,7 +21,8 @@ export class AssetFile {
     public dest: string,
     public ext?: string,
     public parent?: AssetFile,
-    public content?: string
+    public content?: string,
+    public skipped = false
   ) {
     this.dest = this.repl(dest);
   }
@@ -168,26 +169,34 @@ export class AssetProcessor {
 
   private async processFiles(
     files: AssetFile[],
-    cb: (asset: AssetFile) => Promise<string|void>,
+    cb: (asset: AssetFile) => Promise<string|boolean|void>,
     cache = false
   ) {
     const children: AssetFile[] = [];
 
     for (const file of files) {
-      if (cache && fs.existsSync(file.dest)) {
+      if (cache && await fs.exists(file.dest)) {
         this.logger.debug(`skipping ${file.path} (cache)`);
         continue;
       }
 
       const output = await cb(file);
 
-      if (typeof output === 'string') {
-        // await fs.ensureDir(path.dirname(file.dest));
-        fs.mkdir(path.dirname(file.dest), { recursive: true }, () => {});
-        await fileWrite(file.dest, output);
+      if (output === false) {
+        file.skipped = true;
+
+        this.logger.debug(`skipping ${file.path}`);
+        continue;
       }
 
-      if (fs.statSync(file.dest).isFile() && file.dest !== file.path) {
+      file.skipped = false;
+
+      if (typeof output === 'string') {
+        await fs.mkdir(path.dirname(file.dest), { recursive: true });
+        await fileWrite(file.dest, output);
+      } 
+
+      if ((await fs.stat(file.dest)).isFile() && file.dest !== file.path) {
         children.push(
           new AssetFile(file.url, file.dest, file.dest, file.ext, file)
         );
