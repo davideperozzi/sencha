@@ -1,7 +1,7 @@
-import * as fs from '@std/fs';
-import * as path from '@std/path';
-import logger from '../logger/mod.ts';
-import { cleanUrl, fileWrite } from '../utils/mod.ts';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import logger from '../logger';
+import { cleanUrl, fileWrite } from '../utils';
 
 export class AssetFile {
   /**
@@ -182,11 +182,12 @@ export class AssetProcessor {
       const output = await cb(file);
 
       if (typeof output === 'string') {
-        await fs.ensureDir(path.dirname(file.dest));
+        // await fs.ensureDir(path.dirname(file.dest));
+        fs.mkdir(path.dirname(file.dest), { recursive: true }, () => {});
         await fileWrite(file.dest, output);
       }
 
-      if (await fs.exists(file.dest) && file.dest !== file.path) {
+      if (fs.statSync(file.dest).isFile() && file.dest !== file.path) {
         children.push(
           new AssetFile(file.url, file.dest, file.dest, file.ext, file)
         );

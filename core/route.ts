@@ -1,8 +1,8 @@
-import * as path from '@std/path';
-import * as fs from '@std/fs';
-import { ArrayMap, cleanUrl, optPromise, scanDir } from '../utils/mod.ts';
-import { SenchaContext } from "./config.ts";
-import { RouteConfig } from './config.ts';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import { ArrayMap, cleanUrl, optPromise, scanDir } from '../utils';
+import { type SenchaContext } from "./config.ts";
+import { type RouteConfig } from './config.ts';
 
 export type RouteDataEntry = Promise<Record<string, any>> | Record<string, any>;
 export type RouteData = Record<
@@ -155,7 +155,7 @@ export function filterRoutes(routes: Route[], filter: RouteFilter = /.*/) {
 
       if (
         typeof slugFilter === 'string' &&
-        fs.existsSync(slugFilter) &&
+        fs.statSync(slugFilter).isFile() &&
         slugFilter === route.file
       ) {
         return true;

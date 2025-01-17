@@ -1,4 +1,4 @@
-import { EventEmitter } from 'eventemitter';
+import { EventEmitter } from 'eventemitter3';
 
 export type LogMessage = string | any;
 

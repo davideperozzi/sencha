@@ -9,3 +9,4 @@ export * from './server.ts';
 export * from './store.ts';
 export * from './watcher.ts';
 export * from './sencha.ts';
+export * from './react.ts';

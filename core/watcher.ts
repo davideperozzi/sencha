@@ -1,31 +1,27 @@
-import * as fs from '@std/f2';
-import { EventEmitter } from 'eventemitter';
+import { EventEmitter } from 'eventemitter3';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
-import * as path from '@std/path';
-import logger from '../logger/mod.ts';
+import logger from '../logger';
 import { asyncThrottleQueue } from '../utils/async.ts';
 import { AssetFile } from './asset.ts';
-import { BuildResult, SenchaEvents, SenchaStates } from './config.ts';
-import { RouteFilter } from './route.ts';
+import { type BuildResult, SenchaEvents, SenchaStates } from './config.ts';
+import { type RouteFilter } from './route.ts';
 import { Sencha } from './sencha.ts';
-import { scanDir } from "../utils/files.ts";
+import { statSync } from 'node:fs';
+import { getRelativeImports } from '../utils/imports.ts';
 
 export enum WatcherEvents {
   NEEDS_RELOAD = 'needsreload'
 }
 
-interface ConfigFile {
-  file: string;
-  cache: string;
-}
-
 export class Watcher extends EventEmitter {
   private logger = logger.child('watcher');
-  private fileEvents = ['modify', 'create', 'remove'];
+  private fileEvents = ['rename', 'change'];
   private notifiers = new Map<string, number>();
   private state = { result: {} as BuildResult };
-  private configFiles: ConfigFile[] = [];
-  private watcher?: Deno.FsWatcher;
+  private configFiles: string[] = [];
+  private watchers?: { path: string; isFile: boolean; watcher: AsyncIterable<fs.FileChangeInfo<string>>; }[];
   private buildViews = asyncThrottleQueue<[RouteFilter?]>(
     (views?: RouteFilter) => this.sencha.build(views),
     10
@@ -56,8 +52,7 @@ export class Watcher extends EventEmitter {
   async start() {
     const files: string[] = [];
 
-    for await (const entry of Deno.readDir(this.sencha.dirs.root)) {
-      const file = entry.name;
+    for (const file of await fs.readdir(this.sencha.dirs.root)) {
       const isGit = file.startsWith('.git');
       const isOut = file.startsWith(this.sencha.dirs.out);
       const isModules = file.startsWith('node_modules');
@@ -68,96 +63,82 @@ export class Watcher extends EventEmitter {
       }
     }
 
-    this.watcher = Deno.watchFs(files, { recursive: true });
     this.configFiles = await this.findConfigFiles();
+    this.watchers = files.map(file => { 
+      return { 
+        path: file, 
+        isFile: statSync(file).isFile(),
+        watcher: fs.watch(file, { recursive: true }) 
+      };      
+    });
 
     this.notifiers.clear();
     this.logger.info('watching ' + this.sencha.dirs.root);
 
     const mods = new Map<string, number>();
+    const watch = this.watchers.map(({ watcher, path: basePath, isFile }) => (async () => {
+      for await (const event of watcher) {
+        if (!event.filename) {
+          continue;
+        }
 
-    for await (const event of this.watcher) {
-      const file = event.paths[0];
+        const file = isFile ? basePath : path.join(basePath, event.filename);
 
-      // ignore temp files (osx)
-      if (file.endsWith('~') || !file.match(/\.(.*)$/)) {
-        continue;
-      }
+        // Ignore temp files (macOS) or files without extensions
+        if (!file || file.endsWith("~") || !file.match(/\.(.*)$/)) {
+          continue;
+        }
 
-      const exists = fs.existsSync(file);
-      const stat = exists ? await Deno.stat(file) : null;
-      const mtime = stat ? stat.mtime?.getTime() || 0 : 0;
-      const lastMtime = mods.get(file);
-      let valid = true;
-      
-      if (mtime > 0) {
-        if ( ! lastMtime || mtime !== lastMtime) {
-          mods.set(file, mtime);
-        } else if (mtime === mods.get(file)) {
-          valid = false;
+        try {
+          const exists = await fs.exists(file);
+          const stat = exists ? await fs.stat(file) : null;
+          const mtime = stat ? stat.mtime?.getTime() || 0 : 0;
+          const lastMtime = mods.get(file);
+          let valid = true;
+
+          if (mtime > 0) {
+            if (!lastMtime || mtime !== lastMtime) {
+              mods.set(file, mtime);
+            } else if (mtime === mods.get(file)) {
+              valid = false;
+            }
+          }
+
+          if (this.fileEvents.includes(event.eventType) && valid) {
+            delete require.cache[file];
+            await this.build([file], event.eventType);
+          }
+        } catch(err: any) {
+          this.logger.debug(err.message);
         }
       }
-
-      if (this.fileEvents.includes(event.kind) && valid) {
-        await this.build(event.paths, event.kind);  
-      }
-    }
+    })());
+    
+    await Promise.all(watch);
   }
 
-  stop() {
-    if (this.watcher) {
-      this.watcher.close();
-      delete this.watcher;
-    }
-  }
+  stop() {}
 
   private async findConfigFiles() {
-    const files: ConfigFile[] = [];
-    const command = new Deno.Command(Deno.execPath(), {
-      args: [
-        'info',
-        '--json',
-        '--no-npm',
-        '--no-remote',
-        '--node-modules-dir=false',
-        this.sencha.configFile
-      ]
-    });
-
-    const { stdout, stderr } = await command.output();
-
-    if (stderr && stderr.length > 0) {
-      this.logger.warn(
-        'Couldn\'t load config files:' + new TextDecoder().decode(stderr)
-      );
-
-      return files;
-    }
-
-    const imports = JSON.parse(new TextDecoder().decode(stdout));
-
-    for (const name in imports.modules) {
-      const { local, emit } = imports.modules[name];
-
-      if (local) {
-        files.push({ file: local, cache: emit });
-      }
-    }
-
-    return files;
+    return [ 
+      this.sencha.configFile, 
+      ...getRelativeImports(this.sencha.configFile) 
+    ];
   }
 
-  private async build(paths: string[] = [], kind: Deno.FsEvent['kind']) {
+  private async build(paths: string[] = [], kind: fs.FileChangeInfo<any>['eventType']) {
     const views: RouteFilter = [];
     const assets: AssetFile[] = [];
     let needsRebuild = false;
+    let rebuildAllViews = false;
 
     for (const filePath of paths) {
-      const configFile = this.configFiles.find(({ file }) => filePath === file);
+      const configFile = this.configFiles.find(file => filePath === file);
 
       if (configFile) {
         this.emit(WatcherEvents.NEEDS_RELOAD);
         this.logger.debug('config file changed, sending reload event');
+
         continue;
       }
 
@@ -182,14 +163,8 @@ export class Watcher extends EventEmitter {
         filePath.startsWith(this.sencha.dirs.layouts) ||
         filePath.startsWith(this.sencha.dirs.includes)
       ) {
-        // since deno caches imports without the option to fully clear
-        // the cache of all modules and it's dependencies, we have to reload
-        // the whole process to clear the cache for now
-        // await this.buildViews();
-
-        this.emit(WatcherEvents.NEEDS_RELOAD);
-        this.logger.debug('config file changed, sending reload event');
-        break;
+        needsRebuild = true;
+        rebuildAllViews = true;
       } else {
         if (filePath.startsWith(this.sencha.dirs.views)) {
           views.push(filePath);
@@ -203,14 +178,22 @@ export class Watcher extends EventEmitter {
       }
     }
 
-    if ( ! needsRebuild) {
-      if (views.length > 0) {
-        await this.buildViews(views);
+    if (needsRebuild && rebuildAllViews) {
+      for (const fileCache in require.cache) {
+        if (fileCache.endsWith('.tsx') || fileCache.endsWith('.jsx')) {
+          delete require.cache[fileCache];
+        }
       }
 
-      if (assets.length > 0) {
-        await this.processAssets(false, assets);
-      }
+      await this.buildViews();
+    } 
+
+    if (views.length > 0 && !needsRebuild && !rebuildAllViews) {
+      await this.buildViews(views);
+    }
+
+    if (assets.length > 0  && !needsRebuild) {
+      await this.processAssets(false, assets);
     }
   }
 }

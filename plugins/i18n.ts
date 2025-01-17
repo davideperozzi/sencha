@@ -1,16 +1,15 @@
 import '../core/config.ts';
 
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
-import i18next, { InitOptions } from 'i18next';
-import Backend from 'npm:i18next-fs-backend@2.3.2';
+import i18next, { TFunction, type InitOptions } from 'i18next';
+import Backend from 'i18next-fs-backend';
+import { Sencha, type SenchaPlugin } from '../core';
 
-// re-enable once type agumentation is supported
-// declare module '../core/config.ts' {
-//   interface RouteContext {
-//     i18n?: typeof i18next;
-//     __?: TFunction<string>;
-//   }
-// }
+declare module '../core/config.ts' {
+  interface RouteContext {
+    i18n?: typeof i18next;
+    __?: TFunction<string>;
+  }
+}
 
 export interface I18NPluginConfig extends InitOptions {
   /**

@@ -1,17 +1,13 @@
-// @deno-types=react-types
-import { ReactNode } from 'react';
-import { deepMerge } from '@std/collection2';
-import { Router as OakRouter, Request as OakRequest } from '@oak/oak';
-import { isDevelopment, type OptPromise } from '../utils/mod.ts';
+import { deepMerge } from '@std/collections';
+import { isDevelopment, type OptPromise } from '../utils';
 import type { SenchaAction } from './action.ts';
 import type { AssetFile } from './asset.ts';
 import type { FetchConfig, Fetcher } from './fetcher.ts';
 import type { HealthCheck } from './health.ts';
 import type { SenchaPlugin, SenchaPluginFilter } from './plugin.ts';
 import type { Route, RouteData, RouteParams } from './route.ts';
-import { denoFileState, SenchaState } from './state.ts';
+import { denoFileState, type SenchaState } from './state.ts';
 import type store from './store.ts';
-import i18next, { TFunction } from 'i18next';
 
 export interface BuildResult {
   cache: boolean;
@@ -27,25 +23,16 @@ export interface SenchaContext {
   store: typeof store;
   filters: Record<string, SenchaPluginFilter>;
   locales: string[];
-
-  // remove, once  global type augmentation is supported by jsr.io
-  style?: (src: string) => string;
-  script?: (src: string) => string;
-  i18n?: typeof i18next;
 }
 
 export interface RouteContext<T = unknown> {
   sencha: SenchaContext;
   route: Route<T>;
-
-  // remove, once  global type augmentation is supported by jsr.io
-  i18n?: typeof i18next;
-  __?: TFunction<string>;
 }
 
 export interface WatcherChangeEvent {
   file: string;
-  type: Deno.FsEvent
+  type: any;
 }
 
 export type BuildHook = (result: BuildResult, context: SenchaContext) => void;
@@ -67,18 +54,6 @@ export interface HooksConfig {
   viewRender?: OptPromise<(result: { route: Route, html: string }) => boolean>;
   watcherChange?: OptPromise<(event: WatcherChangeEvent) => void>;
   watcherRebuild?: OptPromise<(events: WatcherChangeEvent[]) => void>;
-
-  // server
-  serverInit?: OptPromise<(router: OakRouter) => void>,
-  serverUpgrade?: OptPromise<(router: OakRouter, routes: Route[]) => void>
-  serverAddRoute?: OptPromise<(route: Route) => void>,
-  serverRenderRoute?: OptPromise<(
-    result: {
-      request: OakRequest;
-      route: Route;
-      html: string;
-    }  
-  ) => string | void>
 }
 
 export type RouteViewMap = OptPromise<(view: string, lang: string, ctx: SenchaContext) => string>;
@@ -114,24 +89,10 @@ export interface SenchaConfig
   actions?: (SenchaAction | OptPromise<((sencha: any) => SenchaAction)>)[];
   livereload?: boolean;
   prettyUrls?: boolean;
-
-  // remove, once  global type augmentation is supported by jsr.io
-  api?: {
-    prefix?: string;
-    secret?: string;
-  };
 }
 
 export interface SenchaStartConfig {
   configFile?: string;
-}
-
-export interface SenchaReactLayoutProps<P = Record<string, any>> {
-  context: RouteContext;
-  View: {
-    Component: ReactNode;
-    props: P;
-  }
 }
 
 export enum SenchaEvents {
@@ -163,7 +124,7 @@ export function createConfig(config: SenchaOptions = {}) {
   return deepMerge<SenchaConfig>({
     locale: 'en',
     outDir: 'dist',
-    rootDir: Deno.cwd(),
+    rootDir: process.cwd(),
     useActions: [],
     assetDir: '_',
     plugins: [],

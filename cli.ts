@@ -1,21 +1,20 @@
+#!/usr/bin/env bun
+
 async function run() {
   while (true) {
-    const command = new Deno.Command(Deno.execPath(), {
-      cwd: Deno.cwd(),
-      stdout: 'inherit',
-      stderr: 'inherit',
-      args: [
-        'run',
-        '-A',
-        '-q',
-        '-c', './deno.json',
-        import.meta.resolve('./cli/command.ts'),
-        ...Deno.args
-      ]
+    const command = Bun.spawn({
+      cwd: process.cwd(),
+      stdout: "inherit", 
+      stderr: "inherit", 
+      cmd: [
+        Bun.env.BUN_PATH || "bun", 
+        "run",
+        import.meta.resolve("./cli/command.ts").replace('file://', ''),
+        ...Bun.argv.slice(2), 
+      ],
     });
 
-    const process = command.spawn();
-    const { code } = await process.output();
+    const code = await command.exited;
 
     // Code 243 is used to signal the parent process that it needs to restart.
     // This will mostly happen when the user is using the watcher and it has
@@ -30,7 +29,7 @@ async function run() {
       continue;
     }
 
-    Deno.exit(code);
+    process.exit(code);
   }
 }
 

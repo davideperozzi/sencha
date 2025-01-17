@@ -1,7 +1,6 @@
-// @deno-types=react-dom-types/server
-import { renderToString } from 'react-dom/server';
+import { renderToStaticMarkup } from 'react-dom/server';
 
-import { Sencha, SenchaPlugin } from '../core/mod.ts';
+import { Route, Sencha, type SenchaPlugin, I18nCtx, RouteCtx, SenchaCtx, ViewPropsCtx } from '../core';
 import { optPromise } from '../utils/async.ts';
 
 export interface ReactPluginConfig {
@@ -33,22 +32,29 @@ export default (config: ReactPluginConfig = {}) => {
               );
             }
 
-            let props = {};
+            let viewProps = {};
             const {
-              default: Component,
+              default: ViewComponent,
               getStaticProps = null
             } = await import('file://' + route.file + '#' + Date.now());
 
             if (getStaticProps) {
-              props = await optPromise(getStaticProps, context);
-            } else {
-              props = context;
-            }
+              viewProps = await optPromise(getStaticProps, context) || {};
+            } 
 
-            return '<!DOCTYPE html>' + renderToString(Layout({
-              View: { Component, props },
-              context
-            }, layoutProps.get(layoutPath)));
+            return '<!DOCTYPE html>' + renderToStaticMarkup(
+              <SenchaCtx value={sencha.context}>
+                <RouteCtx value={context.route as Route}>
+                  <I18nCtx value={context.i18n as any}>
+                    <ViewPropsCtx value={viewProps}>
+                      <Layout {...layoutProps.get(layoutPath) as any}>
+                        <ViewComponent {...viewProps} />
+                      </Layout>
+                    </ViewPropsCtx>
+                  </I18nCtx>
+                </RouteCtx>
+              </SenchaCtx>
+            );
           }
         }
       }

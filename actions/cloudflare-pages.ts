@@ -1,4 +1,4 @@
-import { SenchaAction } from '../core/action.ts';
+import { type SenchaAction } from '../core/action.ts';
 import { Sencha } from '../core/sencha.ts';
 
 interface CloudFlarePagesScriptConfig {
@@ -20,14 +20,14 @@ export default (
     name: name || 'cloudflarePages',
     hooks: {
       beforeRun: () => {
-        Deno.env.set('WRANGLER_LOG', 'none');
+        Bun.env.WRANGLER_LOG = 'none';
 
         if (config.apiToken) {
-          Deno.env.set('CLOUDFLARE_API_TOKEN', config.apiToken);
+          Bun.env.CLOUDFLARE_API_TOKEN = config.apiToken;
         }
 
         if (config.accountId) {
-          Deno.env.set('CLOUDFLARE_ACCOUNT_ID', config.accountId);
+          Bun.env.CLOUDFLARE_ACCOUNT_ID = config.accountId;
         }
       },
       afterBuild: async () => {

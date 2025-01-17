@@ -1,6 +1,7 @@
-import * as path from '@std/path';
-import { SenchaPlugin } from '../plugin.ts';
+import * as path from 'node:path';
+import { type SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
+import { ServerWebSocket } from 'bun';
 
 const routePath = '/c2VuY2hhbGl2ZXJlbG9hZAo';
 const reloadScript = /* js */`
@@ -64,7 +65,7 @@ const reloadScript = /* js */`
 `;
 
 export default (sencha: Sencha) => {
-  const sockets: WebSocket[] = [];
+  let sockets: Map<string, ServerWebSocket<unknown>>;
 
   return {
     hooks: {
@@ -75,7 +76,7 @@ export default (sencha: Sencha) => {
           return;
         }
 
-        for (const socket of sockets) {
+        for (const socket of sockets.values()) {
           socket.send(JSON.stringify({
             type: 'file',
             reload: false,
@@ -85,7 +86,7 @@ export default (sencha: Sencha) => {
       },
       assetProcess: (asset) => {
         if ( ! asset.isFirst()) {
-          for (const socket of sockets) {
+          for (const socket of sockets.values()) {
             socket.send(JSON.stringify({
               type: 'asset',
               reload: false,
@@ -95,7 +96,7 @@ export default (sencha: Sencha) => {
         }
       },
       buildSuccess: () => {
-        for (const socket of sockets) {
+        for (const socket of sockets.values()) {
           socket.send(JSON.stringify({
             type: 'build',
             reload: true,
@@ -103,25 +104,20 @@ export default (sencha: Sencha) => {
           }));
         }
       },
-      serverUpgrade: (router) =>  {
-        router.get(routePath, (ctx) => {
-          if ( ! ctx.isUpgradable) {
-            ctx.response.body = reloadScript;
+      serverUpgrade: (router, { server, sockets: newSockets }) =>  {
+        sockets = newSockets;
 
-            return;
+        router.get(routePath, async (req) => {
+          const id = Bun.randomUUIDv7();
+
+          if (!server.upgrade(req, { data: { id } })) {
+            return new Response(reloadScript, {
+              headers: {
+                'Content-Type': 'text/javascript;charset=utf-8'
+              }
+            });
           }
-
-          const socket = ctx.upgrade();
-
-          socket.onopen = () => sockets.push(socket);
-          socket.onclose = () => {
-            const index = sockets.indexOf(socket);
-
-            if (index > -1) {
-              sockets.splice(index, 1);
-            }
-          };
-        })
+        });
       },
       serverRenderRoute: ({ html }) => {
         const script = `<script async src="${routePath}"></script>`;

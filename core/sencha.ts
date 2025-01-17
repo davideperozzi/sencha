@@ -1,29 +1,25 @@
-import * as path from '@std/path';
-import logger from '../logger/mod.ts';
+import * as path from 'node:path';
+import logger from '../logger';
 import { isDevelopment } from '../utils/env.ts';
 import { measure } from '../utils/perf.ts';
 import { ActionManager } from './action.ts';
 import { AssetFile, AssetProcessor } from './asset.ts';
 import { Builder } from './builder.ts';
 import {
-  SenchaConfig, SenchaContext, SenchaDirs, SenchaEvents,
-  SenchaOptions, SenchaStates,
+  type SenchaConfig, type SenchaContext, type SenchaDirs, SenchaEvents,
+  type SenchaOptions, SenchaStates,
   createConfig,
 } from './config.ts';
 import emitter from './emitter.ts';
 import { Fetcher, fetcherDefaultConfig } from './fetcher.ts';
 import { Loader, LoaderEvent } from './loader.ts';
-import { PluginManager, SenchaPlugin } from './plugin.ts';
+import { PluginManager, type SenchaPlugin } from './plugin.ts';
 import apiPlugin from './plugins/api.ts';
 import livereloadPlugin from './plugins/livereload.ts';
 import scriptPlugin from './plugins/script.ts';
 import stylePlugin from './plugins/style.ts';
-import {
-  Route,
-  RouteFilter,
-  createRoutesFromFiles, filterRoutes, parseRouteData,
-} from './route.ts';
-import { SenchaState } from './state.ts';
+import { type Route, type RouteFilter, createRoutesFromFiles, filterRoutes, parseRouteData } from './route.ts';
+import { type SenchaState } from './state.ts';
 import store from './store.ts';
 import { healthCheck } from "./health.ts";
 
@@ -286,7 +282,13 @@ export class Sencha {
       this.logger.error(`build failed with ${result.errors.length} errors`);
     } else {
       this.emitter.emit(SenchaEvents.BUILD_SUCCESS, result);
-      this.state.set(SenchaStates.LAST_ROUTES, allRoutes);
+      this.state.set(SenchaStates.LAST_ROUTES, allRoutes.map(route => {
+        const clonedRoute = { ...route };
+
+        clonedRoute.data = {};
+
+        return clonedRoute;
+      }));
 
       if (filter) {
         this.emitter.emit(SenchaEvents.ROUTES_FULL_UPDATE, allRoutes);

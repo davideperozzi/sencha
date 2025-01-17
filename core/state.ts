@@ -1,8 +1,9 @@
-import * as path from '@std/path';
-import * as fs from '@std/fs';
 import { parse, stringify } from '@ungap/structured-clone/json';
-import { throttle } from "../utils/async.ts";
-import { logger } from "../mod.ts";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { fileRead, fileWrite } from '../utils/files';
+import { logger } from "../";
+import { throttle } from '../utils';
 
 export interface SenchaState {
   watch<T = unknown>(key: string, cb: (value: T) => void): any;
@@ -18,28 +19,28 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
   const memory = new Map<string, unknown>();
 
   return {
-    watch: async <T = unknown>(key: string, cb: (value: T) => void) => {
+     watch: async <T = unknown>(key: string, cb: (value: T) => void) => {
       let timeout = -1;
       const file = path.join(config.file, key);
 
-      await fs.ensureFile(file);
+      (await fs.open(file, 'a')).close();
 
-      const watcher = Deno.watchFs(file);
-      const events = ['modify', 'create', 'remove'];
+      const watcher = fs.watch(file);
+      const events = ['change'];
       const update = throttle(async () => {
         try {
-          cb(parse(await Deno.readTextFile(file)) as T);
+          memory.set(key, cb(parse(await fileRead(file)) as T));
         } catch(err) {
           logger.error(err);
         }
       }, 100);
 
       for await (const event of watcher) {
-        if (events.includes(event.kind)) {
+        if (events.includes(event.eventType)) {
           clearTimeout(timeout);
           timeout = setTimeout(() => {
             update();
-          }, 100);
+          }, 100) as any;
         }
       }
     },
@@ -51,7 +52,7 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
       }
 
       if (await fs.exists(file)) {
-        const result =  parse(await Deno.readTextFile(file)) as T;
+        const result = parse(await fileRead(file)) as T;
 
         return result;
       }
@@ -63,8 +64,7 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
       const data = stringify(value);
 
       memory.set(key, value);
-      await fs.ensureFile(file);
-      await Deno.writeTextFile(file, data, { create: true });
+      await fileWrite(file, data);
 
       return value;
     }

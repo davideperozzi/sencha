@@ -1,32 +1,52 @@
-import {
-  Application, Context, Next, Request, Router, send, Status,
-} from '@oak/oak';
-import * as fs from '@std/fs';
-import * as path from '@std/path';
-import logger from '../logger/mod.ts';
-import { SenchaEvents } from './config.ts';
-import { Route } from './route.ts';
+import { Server as BunServer, ServerWebSocket } from 'bun';
+import { createReadStream, statSync } from 'node:fs';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { brotliCompressSync } from "zlib";
+import logger from '../logger';
+import { OptPromise } from '../utils/async.ts';
+import { fileRead } from '../utils/files.ts';
+import { SenchaEvents, SenchaStates } from './config.ts';
+import { type Route } from './route.ts';
 import { Sencha } from './sencha.ts';
 import { SenchaStates } from "./config.ts";
 
-// todo: re-enable once this is allowed for JSR.io
-//
-// declare module './config.ts' {
-//   export interface HooksConfig {
-//     serverInit?: OptPromise<(router: Router) => void>,
-//     serverUpgrade?: OptPromise<(router: Router, routes: Route[]) => void>
-//     serverAddRoute?: OptPromise<(route: Route) => void>,
-//     serverRenderRoute?: OptPromise<(
-//       result: ServerRenderContext
-//     ) => string | void>
-//   }
-// }
+interface ServerUpgradeData {
+  routes: Route[];
+  server: BunServer;
+  sockets: Map<string, ServerWebSocket<unknown>>;
+}
 
-const isSearchEngineBot = (userAgent: string) => {
+declare module './config.ts' {
+  export interface HooksConfig {
+    serverInit?: OptPromise<(router: Router) => void>,
+    serverUpgrade?: OptPromise<(router: Router, data: ServerUpgradeData) => void>
+    serverAddRoute?: OptPromise<(route: Router) => void>,
+    serverRenderRoute?: OptPromise<(result: ServerRenderContext) => string | void>
+  }
+}
+
+const isSearchEngineBot = (userAgent?: string | null) => {
+  if (!userAgent) {
+    return false;
+  }
+
   const botPattern = /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|msnbot|teoma|crawler|spider/i;
 
   return botPattern.test(userAgent);
 };
+
+function parseRange(range: string, fileSize: number): { start: number; end: number } {
+  const [, rangeStart, rangeEnd] = range.match(/bytes=(\d*)-(\d*)/) || [];
+  const start = rangeStart ? parseInt(rangeStart, 10) : 0;
+  const end = rangeEnd ? parseInt(rangeEnd, 10) : fileSize - 1;
+
+  if (start >= fileSize || end >= fileSize || start > end) {
+    throw new Error("Invalid Range");
+  }
+
+  return { start, end };
+}
 
 export interface ServerRenderContext {
   request: Request;
@@ -60,6 +80,13 @@ export interface ServerConfig {
   localeRedirectFallback?: string;
 
   /**
+   * Wether to watch the routes state and upgrade
+   *
+   * @default false
+   */
+  watchRoutes?: boolean;
+
+  /**
    * The port to run the server on
    *
    * @default 8374
@@ -81,23 +108,42 @@ export interface ServerConfig {
   watchRoutes?: boolean;
 }
 
-const removeTrailingSlash = async (ctx: Context, next: Next) => {
-  const { url } = ctx.request;
+const removeTrailingSlash = (req: Request) => {
+  const url = new URL(req.url);
 
   if (url.pathname.endsWith('/') && url.pathname !== '/') {
     url.pathname = url.pathname.replace(/\/$/, "");
-    ctx.response.status = Status.Found;
 
-    return ctx.response.redirect(url);
+    return Response.redirect(url, 302);
   }
-
-  await next();
 };
 
+type ResponseFn = (request: Request) => Promise<Response|undefined|void>|undefined;
+
+export class Router {
+  routes: { method: string|string[]; path: string; response: ResponseFn }[] = [];
+
+  add(method: string|string[], path: string, response: ResponseFn) {
+    this.routes.push({ 
+      method: Array.isArray(method) ? method.map(m => m.toLowerCase()) : method.toLowerCase(),
+      path,
+      response 
+    });
+  }
+
+  get(path: string, response: ResponseFn) { this.add('get', path, response); }
+  post(path: string, response: ResponseFn) { this.add('post', path, response); }
+  put(path: string, response: ResponseFn) { this.add('put', path, response); }
+  delete(path: string, response: ResponseFn) { this.add('delete', path, response); }
+  patch(path: string, response: ResponseFn) { this.add('patch', path, response); }
+  head(path: string, response: ResponseFn) { this.add('head', path, response); }
+  options(path: string, response: ResponseFn) { this.add('options', path, response); }
+}
+
 export class Server {
-  private app = new Application();
+  private app?: BunServer;
+  private sockets = new Map<string, ServerWebSocket<unknown>>();
   private dynamicRouter = new Router();
-  private abortController = new AbortController();
   private staticRouter = new Router();
   private logger = logger.child('server');
 
@@ -115,15 +161,8 @@ export class Server {
   private async init() {
     this.restore();
 
-    this.sencha.emitter.on(
-      SenchaEvents.ROUTES_FULL_UPDATE,
-      this.update.bind(this)
-    );
-
-    this.sencha.emitter.on(
-      SenchaEvents.ROUTES_PARTIAL_UPDATE,
-      this.update.bind(this)
-    );
+    this.sencha.emitter.on(SenchaEvents.ROUTES_FULL_UPDATE, this.update.bind(this));
+    this.sencha.emitter.on(SenchaEvents.ROUTES_PARTIAL_UPDATE, this.update.bind(this));
 
     await this.sencha.pluginHook('serverInit', [this.staticRouter]);
   }
@@ -143,11 +182,18 @@ export class Server {
         routes => this.update(routes)
       );
     }
+
+    if (this.config.watchRoutes) {
+      this.sencha.state.watch<Route[]>(
+        SenchaStates.LAST_ROUTES,
+        routes => this.update(routes)
+      );
+    }
   }
 
-  private getPreferredUserLang(context: Context) {
-    const cookie = context.request.headers.get('cookie');
-    const languages = context.request.acceptsLanguages();
+  private getPreferredUserLang(request: Request) {
+    const cookie = request.headers.get('cookie');
+    const languages = request.headers.get('accepted-languages');
     const savedLang = cookie?.split('; ')
       .find(row => row.startsWith('sencha_custom_locale='))
       ?.split('=')[1];
@@ -173,22 +219,17 @@ export class Server {
     return this.config.localeRedirectFallback || this.sencha.locales[0];
   }
 
-  private handleLocaleRedirect(routes: Route[], route: Route, context: Context) {
-    const seBot = isSearchEngineBot(context.request.userAgent.ua);
-    const prefLang = this.getPreferredUserLang(context);
+  private handleLocaleRedirect(routes: Route[], route: Route, request: Request) {
+    const seBot = isSearchEngineBot(request.headers.get('user-agent'));
+    const prefLang = this.getPreferredUserLang(request);
 
     if (!seBot) {
       const prefRoute = routes.find(r => r.lang == prefLang && r.localized.includes(route.url));      
 
       if (prefRoute) {
-        context.response.status = 302;
-        context.response.redirect(prefRoute.url);
-
-        return true;
+        return Response.redirect(prefRoute.url, 302);
       }
     }
-
-    return false;
   }
 
   private async update(routes: Route[]) {
@@ -197,134 +238,215 @@ export class Server {
 
     this.dynamicRouter = router;
 
-    await this.sencha.pluginHook('serverUpgrade', [router, routes]);
+    await this.sencha.pluginHook('serverUpgrade', [router, { 
+      routes, 
+      server: this.app, 
+      sockets: this.sockets 
+    }]);
 
     for (const route of routes) {
       await this.sencha.pluginHook('serverAddRoute', [route]);
 
       if (localeRedirect) {
-        router.get(route.url.replace(`/${route.lang}`, '') || '/', (context) => {
-          const prefLang = this.getPreferredUserLang(context);
+        router.get(route.url.replace(`/${route.lang}`, '') || '/', async (req) => {
+          const prefLang = this.getPreferredUserLang(req);
 
           if (route.lang == prefLang) {
-            context.response.status = 302;
-            context.response.redirect(route.url);
+            return Response.redirect(route.url, 302);
           } else {
             const prefRoute = routes.find(r => r.lang == prefLang && r.localized.includes(route.url));
 
             if (prefRoute) {
-              context.response.status = 302;
-              context.response.redirect(prefRoute.url);
+              return Response.redirect(prefRoute.url, 302);
             }
           }
         });
       }
-
-      router.get(route.url, async (context) => {
+      
+      router.get(route.url, async (req) => {
         if (localeRedirect) {
-          const redirect = this.handleLocaleRedirect(routes, route, context);
+          const redirect = this.handleLocaleRedirect(routes, route, req);
 
           if (redirect) {
-            return;
+            return redirect;
           }
         }
 
-        await this.route(route, context);
+        return await this.route(route, req);
       });
 
       // set additional route if prettified urls aren't activated this
       // will prevent that the root is only accessible via /index.html
-      if (route.slug === '/' && ! route.pretty) {
-        router.get('/', async (context) => {
-          await this.route(route, context);
-        });
+      if (route.slug === '/' && !route.pretty) {
+        router.get('/', async (req) => await this.route(route, req));
       }
     }
   }
 
-  private async route(route: Route, context: Context) {
+  private async route(route: Route, req: Request) {
     const htmlFile = route.out;
 
     if (await fs.exists(htmlFile)) {
-      context.response.headers.set('Content-Type', 'text/html');
-
       const result: ServerRenderContext = {
         route,
-        html: await Deno.readTextFile(htmlFile),
-        request: context.request
+        html: await fileRead(htmlFile),
+        request: req
       };
 
-      context.response.body = await this.sencha.pluginHook(
-        'serverRenderRoute',
-        [result],
-        () => result.html,
-        (newHtml?: string) => {
-          if (newHtml) {
-            result.html = newHtml
-          }
+      return new Response(
+        await this.sencha.pluginHook(
+          'serverRenderRoute',
+          [result],
+          () => result.html,
+          (newHtml?: string) => {
+            if (newHtml) {
+              result.html = newHtml
+            }
 
-          return false;
+            return false;
+          }
+        ), 
+        { 
+          headers: { 'Content-Type': 'text/html' }
         }
       );
     }
   }
 
-  async start() {
-    if (this.config.removeTrailingSlash !== false) {
-      this.app.use(removeTrailingSlash);
+  private async handleAssetResponse(req: Request, filePath: string): Promise<Response | undefined> {
+    try {
+      const fileStats = statSync(filePath);
+
+      if (!fileStats.isFile()) {
+        return;
+      }
+
+      const file = Bun.file(filePath);
+      const mimeType = file.type || "application/octet-stream";
+      const range = req.headers.get("Range");
+
+      if (range) {
+        const { start, end } = parseRange(range, fileStats.size);
+        const stream = createReadStream(filePath, { start, end });
+
+        return new Response(stream as unknown as ReadableStream, {
+          status: 206,
+          headers: {
+            "Content-Type": mimeType,
+            "Content-Length": (end - start + 1).toString(),
+            "Content-Range": `bytes ${start}-${end}/${fileStats.size}`,
+            "Accept-Ranges": "bytes",
+          },
+        });
+      }
+
+      const rawBuffer = await file.arrayBuffer();
+      const acceptEncoding = req.headers.get("Accept-Encoding") || "";
+      let compressedBuffer: Uint8Array | null = null;
+      let encoding: string | null = null;
+
+      if (acceptEncoding.includes("br")) {
+        compressedBuffer = new Uint8Array(brotliCompressSync(rawBuffer));
+        encoding = "br";
+      } else if (acceptEncoding.includes("gzip")) {
+        compressedBuffer = new Uint8Array(Bun.gzipSync(rawBuffer));
+        encoding = "gzip";
+      } else if (acceptEncoding.includes("deflate")) {
+        compressedBuffer = new Uint8Array(Bun.deflateSync(rawBuffer));
+        encoding = "deflate";
+      }
+
+      const responseBuffer = compressedBuffer || new Uint8Array(rawBuffer);
+      const headers: Record<string, string> = {
+        "Content-Type": mimeType,
+        "Content-Length": responseBuffer.length.toString(),
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "public, max-age=3600",
+      };
+
+      if (encoding) {
+        headers["Content-Encoding"] = encoding;
+      }
+
+      return new Response(compressedBuffer, { status: 200, headers });
+    } catch (error) {
+      console.error("Error serving file:", error);
+      return new Response("Internal Server Error", { status: 500 });
     }
+  }
 
-    this.app.use((context, next) => {
-      const dispatch = this.staticRouter.routes();
-
-      return dispatch(context, next);
-    });
-
-    this.app.use((context, next) => {
-      const dispatch = this.dynamicRouter.routes();
-
-      return dispatch(context, next);
-    });
-
+  async start() {
     const port = this.config.port || 8374;
     const hostname = this.config.host || '0.0.0.0';
     const assetPath = this.sencha.dirs.asset;
     const assetUrl = `/${path.relative(this.sencha.dirs.out, assetPath)}`;
 
-    this.app.use(async (ctx, next) => {
-      const pathname = ctx.request.url.pathname;
-
-      if ( ! pathname.startsWith(assetUrl)) {
-        next();
-        return;
-      }
-
-      const fileUrl = pathname.replace(assetUrl, '');
-      const filePath = path.join(assetPath, fileUrl);
-
-      if ( ! await fs.exists(filePath)) {
-        next();
-        return;
-      }
-
-      await send(ctx, fileUrl, { root: assetPath });
-    });
-
-    this.app.use((ctx) => {
-      ctx.response.status = 404;
-      ctx.response.type = "text/html; charset=utf-8";
-      ctx.response.body = "<h1>404, Page not found!</h1>";
-    })
-
     this.logger.info(`Listening on http://${hostname}:${port}`)
-    await this.app.listen({
+    this.app = Bun.serve({
       hostname,
       port,
-      signal: this.abortController.signal
+      websocket: {
+        message(ws, msg) {
+          // console.log("Received message:", msg);
+          // ws.send(`Echo: ${msg}`);
+        }, 
+        drain(ws) {},
+        open: (ws) => {
+          this.sockets.set((ws.data as any).id, ws);
+        }, 
+        close: (ws) => {
+          this.sockets.delete((ws.data as any).id);
+        },
+      },
+      fetch: async (req, server) => {
+        if (this.config.removeTrailingSlash !== false) {
+          const redirect = removeTrailingSlash(req);
+
+          if (redirect) {
+            return redirect;
+          }
+        }
+
+        const { pathname } = new URL(req.url);
+        const method = req.method.toLowerCase();
+        const routes = [this.dynamicRouter.routes, this.staticRouter.routes].flat();
+        const reqPath = pathname.replace(/\/$/, '');
+
+        if (reqPath.startsWith(assetUrl)) {
+          const fileUrl = reqPath.replace(assetUrl, '');
+          const filePath = path.join(assetPath, fileUrl);
+
+          if (await fs.exists(filePath)) {
+            const response = await this.handleAssetResponse(req, filePath);
+
+            if (response) {
+              return response;
+            }
+          }
+        }
+
+        for (const route of routes) {
+          const methodMatch = Array.isArray(route.method) ? route.method.includes(method) : route.method == method;
+          const routePath = route.path.replace(/\/$/, '');
+
+          if (reqPath == routePath && methodMatch) {
+            const response = await route.response(req);
+
+            if (response) {
+              return response;
+            }
+          }
+        }
+
+        return new Response('<h1>404 - Page Not Found!</h1>', { 
+          status: 404,
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
     });
   }
 
   stop() {
-    this.abortController.abort();
+    this.app?.stop();
   }
 }
