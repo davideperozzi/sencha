@@ -386,11 +386,8 @@ export class Server {
       hostname,
       port,
       websocket: {
-        message(ws, msg) {
-          // console.log("Received message:", msg);
-          // ws.send(`Echo: ${msg}`);
-        }, 
-        drain(ws) {},
+        message() {}, 
+        drain() {},
         open: (ws) => {
           this.sockets.set((ws.data as any).id, ws);
         }, 

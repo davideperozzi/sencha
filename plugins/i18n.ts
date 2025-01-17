@@ -9,6 +9,11 @@ declare module '../core/config.ts' {
     i18n?: typeof i18next;
     __?: TFunction<string>;
   }
+
+  interface SenchaContext {
+    i18n?: typeof i18next;
+    __?: TFunction<string>;
+  }
 }
 
 export interface I18NPluginConfig extends InitOptions {

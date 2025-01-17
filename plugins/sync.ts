@@ -45,16 +45,16 @@ async function sync(
   try {
     const statFrom = fromExists
       ? await fs.stat(from)
-      : { isDirectory: !path.extname(from) };
+      : { isDirectory: () => !path.extname(from) };
     const statTo = toExists
       ? await fs.stat(to)
-      : { isDirectory: !path.extname(to) };
+      : { isDirectory: () => !path.extname(to) };
 
     let fromFiles: string[] = [];
-    let allFromFiles = statFrom.isDirectory
+    let allFromFiles = statFrom.isDirectory()
       ? await scanDir(from)
       : (fromExists ? [from] : []);
-    let toFiles = statTo.isDirectory
+    let toFiles = statTo.isDirectory()
       ? await scanDir(to)
       : (toExists ? [to] : []);
     let copies = 0;
@@ -73,13 +73,13 @@ async function sync(
 
       fromFiles = fromFiles.filter(async file => {
         try {
-          return (await fs.stat(file)).isFile;
+          return (await fs.stat(file)).isFile();
         } catch(err) {}
 
         return false;
       });
     } else {
-      fromFiles = statFrom.isDirectory ? await scanDir(from) : [from];
+      fromFiles = statFrom.isDirectory() ? await scanDir(from) : [from];
     }
 
     fromFiles = fromFiles.map(file => path.relative(from, file));

@@ -1,7 +1,7 @@
 {
   "name": "@perozzi/sencha",
   "module": "index.ts",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "type": "module",
   "publishConfig": {
     "access": "public"

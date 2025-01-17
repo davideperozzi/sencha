@@ -10,7 +10,10 @@ export async function scanDir(dirPath: string): Promise<string[]> {
   }
 
   for (const file of await readdir(dirPath, { recursive: true })) {
-    files.push(path.join(dirPath, file));
+    const fullPath = path.join(dirPath, file);
+    if (statSync(fullPath).isFile()) {
+      files.push(path.join(dirPath, file));
+    }
   }
 
   return files.filter(entries => entries.length > 0);
