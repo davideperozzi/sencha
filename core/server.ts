@@ -141,6 +141,8 @@ export class Router {
 
 export class Server {
   private app?: BunServer;
+  private process?: Promise<void>;
+  private stopProcess?: () => void;
   private sockets = new Map<string, ServerWebSocket<unknown>>();
   private dynamicRouter = new Router();
   private staticRouter = new Router();
@@ -381,6 +383,10 @@ export class Server {
     const assetPath = this.sencha.dirs.asset;
     const assetUrl = `/${path.relative(this.sencha.dirs.out, assetPath)}`;
 
+    if (this.stopProcess) {
+      this.stop();
+    }
+
     this.logger.info(`Listening on http://${hostname}:${port}`)
     this.app = Bun.serve({
       hostname,
@@ -441,9 +447,17 @@ export class Server {
         });
       }
     });
+
+    return this.process = new Promise((resolve) => {
+      this.stopProcess = resolve;
+    });
   }
 
   stop() {
+    if (this.stopProcess) {
+      this.stopProcess();
+    }
+
     this.app?.stop();
   }
 }
