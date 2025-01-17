@@ -72,8 +72,9 @@ export default (config: I18NPluginConfig = {}) => {
 
           (context as any).i18n = i18n;
         },
-        routeMount: (context) => {
+        routeMount: async (context) => {
           context.i18n = i18n.cloneInstance({ lng: context.route.lang });
+          await context.i18n?.changeLanguage(context.route.lang);
 
           if (config.shortcuts !== false) {
             context.__ = context.i18n?.t;
