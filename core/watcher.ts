@@ -117,9 +117,7 @@ export class Watcher extends EventEmitter {
     await Promise.all(watch);
   }
 
-  stop() {
-    // this.watchers?.forEach(watcher => (watcher as any).close());
-  }
+  stop() {}
 
   private async findConfigFiles() {
     return [ 
