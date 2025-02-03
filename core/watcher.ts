@@ -153,6 +153,7 @@ export class Watcher extends EventEmitter {
         (rebuild) => {
           if (rebuild) {
             needsRebuild = true;
+            rebuildAllViews = true;
           }
 
           return rebuild;

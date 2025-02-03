@@ -122,7 +122,7 @@ export default (sencha: Sencha) => {
         });
       },
       serverRenderRoute: ({ html }) => {
-        const script = `<script async src="${routePath}"></script>`;
+        const script = `<script async="" src="${routePath}"></script>`;
 
         if (html.search('</head>') > 0) {
           return html.replace('</head>', `${script}</head>`);

@@ -11,7 +11,7 @@ export const I18nCtx = createContext<NonNullable<RouteContext["i18n"]>>({} as an
 export const ViewPropsCtx = createContext<any>({});
 
 export const useSencha = () => use(SenchaCtx); 
-export const useRoute = () => use(RouteCtx); 
+export const useRoute = <T = Record<string, unknown>>() => use(RouteCtx) as Route<T>; 
 export const useI18n = () => use(I18nCtx); 
 export const useViewProps = <T>() => use<T>(ViewPropsCtx); 
 
