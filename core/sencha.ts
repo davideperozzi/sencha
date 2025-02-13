@@ -48,7 +48,8 @@ export class Sencha {
     store: this.store,
     fetch: this.fetch,
     filters: this.loader.filters,
-    locales: this.locales
+    locales: this.locales,
+    config: this.config
   };
 
   constructor(config?: SenchaOptions) {
@@ -137,6 +138,7 @@ export class Sencha {
     delete this.currentDirs;
 
     this.context.locales = this.locales;
+    this.context.config = this.config;
   }
 
   async start(configFile = 'config.ts', override?: SenchaOptions) {

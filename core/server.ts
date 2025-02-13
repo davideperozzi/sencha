@@ -7,12 +7,12 @@ import { fileRead } from '../utils/files.ts';
 import { SenchaEvents, SenchaStates } from './config.ts';
 import { type Route } from './route.ts';
 import { Sencha } from './sencha.ts';
-import { Router } from './server/router.ts';
 import { compressBuffer } from './server/compress.ts';
 import { sendFile } from './server/file.ts';
-import { getPreferredUserLang, parseAcceptLanguage } from './server/lang.ts';
-import { removeTrailingSlash } from './server/url.ts';
+import { getPreferredUserLang } from './server/lang.ts';
+import { Router } from './server/router.ts';
 import { isSearchEngineBot } from './server/ua.ts';
+import { removeTrailingSlash } from './server/url.ts';
 
 interface ServerUpgradeData {
   routes: Route[];

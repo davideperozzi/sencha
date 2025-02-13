@@ -23,6 +23,7 @@ export interface SenchaContext {
   store: typeof store;
   filters: Record<string, SenchaPluginFilter>;
   locales: string[];
+  config: SenchaConfig
 }
 
 export interface RouteContext<T = unknown> {

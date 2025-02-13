@@ -25,10 +25,6 @@ const reloadScript = (wsPath: string) => `
 
     webSocket.addEventListener('open', () => {
       console.log('Sencha livereload got your back!');
-
-      if (isClosed) {
-        location.reload();
-      }
     });
 
     webSocket.addEventListener('message', (e) => {
