@@ -41,7 +41,7 @@ export default (config: ReactPluginConfig = {}) => {
             if (getStaticProps) {
               viewProps = await optPromise(getStaticProps, context) || {};
             } 
-
+            
             return '<!DOCTYPE html>' + renderToStaticMarkup(
               <SenchaCtx value={sencha.context}>
                 <RouteCtx value={context.route as Route}>

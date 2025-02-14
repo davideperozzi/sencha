@@ -15,10 +15,11 @@ export const useRoute = <T = Record<string, unknown>>() => use(RouteCtx) as Rout
 export const useI18n = () => use(I18nCtx); 
 export const useViewProps = <T>() => use<T>(ViewPropsCtx); 
 
-export function useLink(route?: Route, i18n?: RouteContext["i18n"]) {
+export function useLink(route?: Route, i18n?: RouteContext["i18n"], sencha?: SenchaContext) {
   route = route || useRoute();
   const { t } = i18n || useI18n();
-  const { config: { locale, route: { hideDefaultLang } } } = useSencha();
+  const { config: { locale, route: { hideDefaultLang } } } = sencha || useSencha();
+
   const defaultLang = Array.isArray(locale) ? locale[0] : locale;
   const prefix = hideDefaultLang && defaultLang == route.lang ? '' : route?.lang + '/';
 

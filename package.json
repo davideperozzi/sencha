@@ -1,7 +1,7 @@
-{
+e
   "name": "@perozzi/sencha",
   "module": "index.ts",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "type": "module",
   "publishConfig": {
     "access": "public"
@@ -27,7 +27,8 @@
     "i18next": "^24.2.1",
     "i18next-fs-backend": "2.3.2",
     "postcss": "^8.5.1",
-    "react-dom": "^19.0.0",
+    "react-dom": "19.0.0",
+    "react": "19.0.0",
     "sass": "^1.83.4",
     "zlib": "^1.0.5"
   }
