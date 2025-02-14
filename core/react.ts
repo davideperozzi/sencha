@@ -21,9 +21,9 @@ export function useLink(route?: Route, i18n?: RouteContext["i18n"], sencha?: Sen
   const { config: { locale, route: { hideDefaultLang } } } = sencha || useSencha();
 
   const defaultLang = Array.isArray(locale) ? locale[0] : locale;
-  const prefix = hideDefaultLang && defaultLang == route.lang ? '' : route?.lang + '/';
+  const prefix = hideDefaultLang && defaultLang == route.lang ? '' : '/' + route?.lang;
 
-  const getPath = (slug: string) => `/${prefix}${(slug == "/" || slug == "") ? "" : slug}`;
+  const getPath = (slug: string) => `${prefix}${(slug == "/" || slug == "") ? "" : '/' + slug}`;
   const getUrl = (view: string, repl: Record<string, string> = {}, host?: string) => {
     let url = getPath(t(`slugs.${view}`));
 
