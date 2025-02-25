@@ -132,7 +132,6 @@ export function createConfig(config: SenchaOptions = {}) {
     actions: [],
     state: denoFileState({ file: '.sencha/state' }),
     fetch: { endpoints: {} },
-    exposeApi: true,
     cache: !isDevelopment(),
     livereload: isDevelopment(),
     viewsDir: 'views',

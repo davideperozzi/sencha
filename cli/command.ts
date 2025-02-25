@@ -92,9 +92,9 @@ const command = new Command()
     { default: false }
   )
   .option(
-    '--no-api [noApi:boolean]',
-    'Do not expose the API when serving',
-    { default: false, depends: ['serve'] }
+    '--expose-api [exposeApi:boolean]',
+    'Whether to serve api or dont',
+    { default: true, depends: ['serve'] }
   )
   .option(
     '--skip-build [skipBuild:boolean]',
@@ -116,6 +116,7 @@ const command = new Command()
     skipBuild,
     serveHost,
     servePort,
+    exposeApi,
     serveNoTrailingSlash,
     serveRedirectLocales,
     serveRedirectLocalesFallback,
@@ -124,7 +125,6 @@ const command = new Command()
     logFilter,
     actions,
     noCache,
-    noApi,
     serve,
     watch, 
     watchRoutes
@@ -147,7 +147,7 @@ const command = new Command()
     let serverProc: Promise<void> = Promise.resolve();
     let watcherProc: Promise<void> = Promise.resolve();
     const senchaStart = sencha.start(config, {
-      exposeApi: !noApi,
+      exposeApi: exposeApi,
       cache: !noCache,
       useActions: actions === true ?  '*' : typeof actions === 'string'
         ? actions.split(',').map((script) => script.trim())

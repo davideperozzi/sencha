@@ -3,7 +3,7 @@ import '../config.ts';
 import { safeCompare } from '../../utils/security.ts';
 import { type SenchaPlugin } from '../plugin.ts';
 import { Sencha } from '../sencha.ts';
-import { Router } from '../server.ts';
+import { Router } from '../server/router.ts';
 
 export interface ApiConfig {
   prefix?: string;

@@ -152,7 +152,15 @@ export class Sencha {
       this.fetcher.update(this.config.fetch);
     });
 
-    await this.loader.load(this.path(configFile), this.loadPlugins.bind(this));
+    await this.loader.load(this.path(configFile), (plugins, config) => this.loadPlugins(
+      plugins, 
+      { 
+        ...config, 
+        ...('exposeApi' in (override || {}) ? { exposeApi: override?.exposeApi } : {}),
+        ...('livereload' in (override || {}) ? { livereload: override?.livereload } : {}) 
+      }
+    ));
+
     delete this.currentDirs;
 
     if (override) {
@@ -179,7 +187,7 @@ export class Sencha {
       plugins.push(livereloadPlugin(this));
     }
 
-    if (config.exposeApi) {
+    if (config.exposeApi || config.exposeApi == undefined) {
       plugins.push(apiPlugin(config.api || {})(this));
     }
   }

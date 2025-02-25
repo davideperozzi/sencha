@@ -15,8 +15,8 @@ export const useRoute = <T = Record<string, unknown>>() => use(RouteCtx) as Rout
 export const useI18n = () => use(I18nCtx); 
 export const useViewProps = <T>() => use<T>(ViewPropsCtx); 
 
-export function useLink(route?: Route, i18n?: RouteContext["i18n"], sencha?: SenchaContext) {
-  route = route || useRoute();
+export function useLink<T>(route?: Route<T>, i18n?: RouteContext["i18n"], sencha?: SenchaContext) {
+  route = route || useRoute<T>();
   const { t } = i18n || useI18n();
   const { config: { locale, route: { hideDefaultLang } } } = sencha || useSencha();
 
