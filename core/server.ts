@@ -25,12 +25,13 @@ declare module './config.ts' {
     serverInit?: OptPromise<(router: Router) => void>,
     serverUpgrade?: OptPromise<(router: Router, data: ServerUpgradeData) => void>
     serverAddRoute?: OptPromise<(route: Router) => void>,
-    serverRenderRoute?: OptPromise<(result: ServerRenderContext) => string | void>
+    serverRenderRoute?: OptPromise<(result: ServerRenderContext) => string | Response | void>
   }
 }
 
 export interface ServerRenderContext {
   request: Request;
+  response?: Response;
   route: Route;
   html: string;
 }
@@ -206,19 +207,25 @@ export class Server {
     const htmlFile = route.out;
 
     if (await fs.exists(htmlFile)) {
-      const result: ServerRenderContext = { route, html: await fileRead(htmlFile), request: req };
+      const result: ServerRenderContext = { route, request: req, html: await fileRead(htmlFile) };
       const content = await this.sencha.pluginHook(
         'serverRenderRoute',
         [result],
         () => result.html,
-        (newHtml?: string) => {
-          if (newHtml) {
-            result.html = newHtml;
+        (response?: string | Response) => {
+          if (typeof response == 'string') {
+            result.html = response;
+          } else if (response instanceof Response) {
+            result.response = response;
           }
 
           return false;
         }
-      )
+      );
+
+      if (result.response) {
+        return result.response;
+      }
 
       const { buffer, headers } = await compressBuffer(req, content)
 
