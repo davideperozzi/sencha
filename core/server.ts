@@ -88,6 +88,7 @@ export class Server {
   private process?: Promise<void>;
   private stopProcess?: () => void;
   private sockets = new Map<string, ServerWebSocket<unknown>>();
+  private notFoundRoutes: Route[] = [];
   private dynamicRouter = new Router();
   private staticRouter = new Router();
   private logger = logger.child('server');
@@ -179,6 +180,12 @@ export class Server {
     for (const route of routes) {
       await this.sencha.pluginHook('serverAddRoute', [route]);
 
+      if (route.view === '404') {
+        this.notFoundRoutes.push(route);
+
+        continue;
+      }
+
       if (localeRedirect) {
         this.attachLocaleRoute(router, route, routes);
       }
@@ -203,7 +210,7 @@ export class Server {
     }
   }
 
-  private async route(route: Route, req: Request) {
+  private async route(route: Route, req: Request, opts?: Partial<ResponseInit>) {
     const htmlFile = route.out;
 
     if (await fs.exists(htmlFile)) {
@@ -232,10 +239,8 @@ export class Server {
       return new Response(
         buffer, 
         { 
-          headers: { 
-            'Content-Type': 'text/html', 
-            ...headers 
-          } 
+          headers: { 'Content-Type': 'text/html', ...headers },
+          ...(opts ? opts : {})
         }
       );
     }
@@ -282,6 +287,15 @@ export class Server {
         if (response) {
           return response;
         }
+      }
+    }
+
+    if (this.notFoundRoutes.length > 0) {
+      const prefLang = getPreferredUserLang(req, this.sencha.locales, this.fallbackLang);
+      const route = this.notFoundRoutes.find(r => r.lang === prefLang);
+
+      if (route) {
+        return this.route(route, req, { status: 404 });
       }
     }
 
