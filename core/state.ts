@@ -29,7 +29,11 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
       const events = ['change'];
       const update = throttle(async () => {
         try {
-          memory.set(key, cb(parse(await fileRead(file)) as T));
+          const content = await fileRead(file);
+
+          if (content && content.trim().length > 0) {
+            memory.set(key, cb(parse(content) as T));
+          }
         } catch(err) {
           logger.error(err);
         }
@@ -52,19 +56,26 @@ export function denoFileState(config: DenoFileStateOptions): SenchaState {
       }
 
       if (await fs.exists(file)) {
-        const result = parse(await fileRead(file)) as T;
+        const content = await fileRead(file);
 
-        return result;
+        if (content && content.trim().length > 0) {
+          const result = parse(await fileRead(file)) as T;
+
+          return result;
+        }
       }
 
       return undefined;
     },
     set: async <T = unknown>(key: string, value: T) => {
       const file = path.join(config.file, key);
-      const data = stringify(value);
 
-      memory.set(key, value);
-      await fileWrite(file, data);
+      if (value) {
+        const data = stringify(value);
+
+        memory.set(key, value);
+        await fileWrite(file, data);
+      }
 
       return value;
     }
