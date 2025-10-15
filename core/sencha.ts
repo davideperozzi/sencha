@@ -3,7 +3,7 @@ import logger from '../logger';
 import { isDevelopment } from '../utils/env.ts';
 import { measure } from '../utils/perf.ts';
 import { ActionManager } from './action.ts';
-import { AssetFile, AssetProcessor } from './asset.ts';
+import { AssetFile, AssetProcessor } from './asset';
 import { Builder } from './builder.ts';
 import {
   type SenchaConfig, type SenchaContext, type SenchaDirs, SenchaEvents,

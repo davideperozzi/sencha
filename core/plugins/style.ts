@@ -1,9 +1,9 @@
 import '../config.ts';
 
-import { type SenchaPlugin } from '../plugin.ts';
-import { Sencha } from '../sencha.ts';
+import { type SenchaPlugin } from '../plugin';
+import { Sencha } from '../sencha';
 
-declare module '../config.ts' {
+declare module '../config' {
   interface SenchaContext {
     style?: (src: string) => string;
   }

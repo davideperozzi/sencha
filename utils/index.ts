@@ -1,9 +1,9 @@
-export * from './files.ts';
-export * from './object.ts';
-export * from './async.ts';
-export * from './url.ts';
-export * from './request.ts';
-export * from './perf.ts';
-export * from './env.ts';
-export * from './map.ts';
+export * from './files';
+export * from './object';
+export * from './async';
+export * from './url';
+export * from './request';
+export * from './perf';
+export * from './env';
+export * from './map';
 
