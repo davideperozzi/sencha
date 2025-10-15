@@ -16,7 +16,8 @@ function parseRange(range: string, fileSize: number): { start: number; end: numb
 export async function sendFile(
   req: Request, 
   filePath: string, 
-  cacheScripts = true
+  cacheScripts = true, 
+  cacheTTL: number = 31536000
 ): Promise<Response | undefined> {
   try {
     const fileStats = statSync(filePath);
@@ -49,7 +50,7 @@ export async function sendFile(
 
     return new Response(buffer, { status: 200, headers: {
       "Content-Type": mimeType,
-      "Cache-Control": noCache ? "no-cache, no-store, must-revalidate" : "public, max-age=3600",
+      "Cache-Control": noCache ? "no-cache, no-store, must-revalidate" : "public, max-age=" + cacheTTL,
       "Accept-Ranges": "bytes", 
       ...headers
     } });
