@@ -1,7 +1,7 @@
-export function isSearchEngineBot(userAgent?: string | null) {
-  if (!userAgent) {
-    return false;
-  }
+import { Crawler } from 'es6-crawler-detect'
 
-  return /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|msnbot|teoma|crawler|spider/i.test(userAgent);
+const crawler = new Crawler();
+
+export function isSearchEngineBot(userAgent?: string | null) {
+  return crawler.isCrawler(userAgent || undefined);
 };
