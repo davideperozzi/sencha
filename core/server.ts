@@ -62,6 +62,13 @@ export interface ServerConfig {
   localeRedirectFallback?: string;
 
   /**
+   * Whether to force the locale redirects
+   * and attach the user to the browser language
+   * found in his UA string
+   */
+  localeRedirectForce?: boolean;
+
+  /**
    * Wether to watch the routes state and upgrade
    *
    * @default false
@@ -138,10 +145,15 @@ export class Server {
 
   private handleLocaleRedirect(routes: Route[], route: Route, request: Request) {
     const seBot = isSearchEngineBot(request.headers.get('user-agent'));
-    const prefLang = getPreferredUserLang(request, this.sencha.locales, this.fallbackLang);
+    const prefLang = getPreferredUserLang(
+      request,
+      this.sencha.locales,
+      this.config.localeRedirectForce,
+      this.fallbackLang
+    );
 
     if (!seBot) {
-      const prefRoute = routes.find(r => r.lang == prefLang && r.localized.includes(route.url));      
+      const prefRoute = routes.find(r => r.lang == prefLang && r.localized.includes(route.url));
 
       if (prefRoute) {
         return Response.redirect(prefRoute.url, 302);
@@ -151,7 +163,7 @@ export class Server {
 
   private attachLocaleRoute(router: Router, route: Route, allRoutes: Route[]) {
     router.get(route.url.replace(`/${route.lang}`, '') || '/', async (req) => {
-      const prefLang = getPreferredUserLang(req, this.sencha.locales, this.fallbackLang);
+      const prefLang = getPreferredUserLang(req, this.sencha.locales, this.config.localeRedirectForce, this.fallbackLang);
 
       if (route.lang == prefLang) {
         return Response.redirect(route.url, 302);
@@ -190,8 +202,9 @@ export class Server {
         this.attachLocaleRoute(router, route, routes);
       }
 
+      console.log(this.config.localeRedirectForce);
       router.get(route.url, async (req) => {
-        if (localeRedirect) {
+        if (localeRedirect && this.config.localeRedirectForce == true) {
           const redirect = this.handleLocaleRedirect(routes, route, req);
 
           if (redirect) {

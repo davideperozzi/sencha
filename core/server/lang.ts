@@ -10,8 +10,13 @@ export function parseAcceptLanguage(header: string): string[] {
 export function getPreferredUserLang(
   request: Request,
   locales: string[],
+  force = false,
   fallbackLang?: string
 ) {
+  if (force === false) {
+    return fallbackLang;
+  }
+
   const cookie = request.headers.get('cookie');
   const languages = parseAcceptLanguage(request.headers.get('accept-language') || '');
   const savedLang = cookie?.split('; ')

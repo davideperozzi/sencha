@@ -82,6 +82,11 @@ const command = new Command()
     { default: undefined, depends: ['serve'] }
   )
   .option(
+    '--serve-redirect-locales-no-force [serveRedirectLocalesNoForce:boolean]',
+    'Prevents hard redirects to the language version',
+    { default: false, depends: ['serve'] }
+  )
+  .option(
     '--watch [watch:boolean]',
     'Start watcher for local development. Note: Sets logLevel to debug',
     { default: false }
@@ -120,6 +125,7 @@ const command = new Command()
     serveNoTrailingSlash,
     serveRedirectLocales,
     serveRedirectLocalesFallback,
+    serveRedirectLocalesNoForce,
     logLevel,
     dev,
     logFilter,
@@ -162,6 +168,7 @@ const command = new Command()
         removeTrailingSlash: serveNoTrailingSlash,
         localeRedirect: serveRedirectLocales,
         localeRedirectFallback: serveRedirectLocalesFallback,
+        localeRedirectForce: !serveRedirectLocalesNoForce
       });
 
       serverProc = server.start();
