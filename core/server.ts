@@ -202,7 +202,6 @@ export class Server {
         this.attachLocaleRoute(router, route, routes);
       }
 
-      console.log(this.config.localeRedirectForce);
       router.get(route.url, async (req) => {
         if (localeRedirect && this.config.localeRedirectForce == true) {
           const redirect = this.handleLocaleRedirect(routes, route, req);
