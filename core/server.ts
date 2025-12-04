@@ -226,6 +226,21 @@ export class Server {
     const htmlFile = route.out;
 
     if (await fs.exists(htmlFile)) {
+      const stats = await fs.stat(htmlFile);
+      
+      if (req.method?.toLowerCase() === 'head') {
+        return new Response(
+          null, 
+          { 
+            headers: { 
+              'Content-Type': 'text/html;charset=utf-8',
+              'Content-Length': `${stats.size}`
+            },
+            ...(opts ? opts : {})
+          }
+        );
+      }
+
       const result: ServerRenderContext = { route, request: req, html: await fileRead(htmlFile) };
       const content = await this.sencha.pluginHook(
         'serverRenderRoute',
@@ -251,7 +266,10 @@ export class Server {
       return new Response(
         buffer, 
         { 
-          headers: { 'Content-Type': 'text/html', ...headers },
+          headers: { 
+            'Content-Type': 'text/html;charset=utf-8',
+            ...headers 
+          },
           ...(opts ? opts : {})
         }
       );
@@ -289,12 +307,26 @@ export class Server {
 
     for (const route of routes) {
       const routePath = route.path.replace(/\/$/, '');
-      const methodMatch = Array.isArray(route.method) 
-        ? route.method.includes(method) 
-        : route.method == method;
+      const routeMethods = Array.isArray(route.method)
+        ? route.method.map(m => m.toLowerCase())
+        : [String(route.method).toLowerCase()];
+      const methodMatch = routeMethods.includes(method);
+      const headFallback = method === "head" && routeMethods.includes("get");
 
-      if (reqPath == routePath && methodMatch) {
+      if (reqPath == routePath && (methodMatch || headFallback)) {
         const response = await route.response(req);
+
+        if (!response) {
+          continue;
+        } 
+
+        if (headFallback) {
+          return new Response(null, {
+            status: response.status,
+            statusText: response?.statusText,
+            headers: response.headers,
+          });
+        }
 
         if (response) {
           return response;
@@ -303,7 +335,7 @@ export class Server {
     }
 
     if (this.notFoundRoutes.length > 0) {
-      const prefLang = getPreferredUserLang(req, this.sencha.locales, this.fallbackLang);
+      const prefLang = getPreferredUserLang(req, this.sencha.locales, this.config.localeRedirectForce, this.fallbackLang);
       const route = this.notFoundRoutes.find(r => r.lang === prefLang);
 
       if (route) {
