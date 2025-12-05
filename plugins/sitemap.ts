@@ -18,7 +18,7 @@ export default (config: SitemapPluginConfig = {}) => {
         buildSuccess: async ({ allRoutes }) => {
           const urls = allRoutes.filter(config.filter || (() => true)).map((slug) => `<url><loc>${config.baseUrl || ''}${slug}</loc></url>`);
           const args = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml"';
-          const sitemap = `<?xml version="1.0" encoding="UTF-8"?><urlset ${args}>${urls}</urlset>`;
+          const sitemap = `<?xml version="1.0" encoding="UTF-8"?><urlset ${args}>${urls.join('')}</urlset>`;
 
           await fileWrite(filePath, sitemap);
           logger.debug(`written sitemap to ${fileName}`);
